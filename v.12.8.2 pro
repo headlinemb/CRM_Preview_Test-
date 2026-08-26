@@ -1,0 +1,1226 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
+  PieChart, Pie, Cell, CartesianGrid, Legend, ComposedChart, LabelList 
+} from 'recharts';
+
+const Icons = {
+  Check: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>,
+  User: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
+  X: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>,
+  IdCard: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>,
+  Dollar: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  Gift: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>,
+  Chart: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+  Database: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
+  Save: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>,
+  Upload: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>,
+  Download: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
+  ListView: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>,
+  CardView: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+  Beaker: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>,
+  History: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  Plus: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
+  Minus: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>,
+  Trash: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+  Edit: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
+  Banknote: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  CreditCard: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
+  Wallet: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
+  Settings: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  Cart: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  AlertTriangle: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  Photo: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  Link: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>,
+  Cloud: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>,
+  Key: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
+  Lock: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>,
+  Refresh: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  MessageCircle: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
+  Calendar: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  ChevronLeft: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
+  ChevronRight: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>,
+};
+
+const STYLIST_THEMES = {
+  'Man': { hex: '#6D3A14', light: '#6D3A1415', shadow: 'rgba(109, 58, 20, 0.3)' },
+  'Becky': { hex: '#9F3E3E', light: '#9F3E3E15', shadow: 'rgba(159, 62, 62, 0.3)' },
+  'Sammy': { hex: '#2C496A', light: '#2C496A15', shadow: 'rgba(44, 73, 106, 0.3)' },
+  'Others': { hex: '#595959', light: '#59595915', shadow: 'rgba(89, 89, 89, 0.3)' }
+};
+
+const CHART_COLORS = ['#6D3A14', '#9F3E3E', '#2C496A', '#C4A485', '#595959'];
+const chemicalKeywords = ['電', '染', '漂', 'Keratin', 'Perm', 'Color', 'Highlight', 'Touch', 'Bleach'];
+const scalpNotes = ['正常', '偏油性', '偏乾性', '敏感性頭皮', '髮質偏幼細', '嚴重受損髮質', '抗拒染膏'];
+const defaultInterests = ['白頭髮遮蓋', '想試染髮', '有機/天然品牌', '縮毛矯正', '受損髮質修護'];
+const stylists = ['Man', 'Becky', 'Sammy', 'Others'];
+const paymentMethods = [
+  { id: 'Cash', label: 'Cash', icon: Icons.Banknote },
+  { id: 'Credit Card', label: 'Credit', icon: Icons.CreditCard },
+  { id: 'Others', label: 'Others', icon: Icons.Wallet }
+];
+const defaultServices = ['剪髮 (Cut)', '洗吹 (Wash & Blow)', '電髮 (Perm)', '全頭染髮 (Color)', '髮根補染 (Root Touch)', '漂髮 (Bleach)', '挑染 (Highlights)', '角蛋白護理 (Keratin)', '頭皮理療 (Treatment)'];
+const birthMonthsList = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月','不提供'];
+const APPOINTMENT_TEMPLATES = [
+    { id: 't1', label: '洗吹 - 30m', duration: 30, service: '洗吹 (Wash & Blow)' },
+    { id: 't2', label: '剪髮 - 60m', duration: 60, service: '剪髮 (Cut)' },
+    { id: 't6', label: '頭皮/角蛋白 - 60m', duration: 60, service: '頭皮理療 (Treatment)' },
+    { id: 't3', label: '染髮+剪髮 - 120m', duration: 120, service: '全頭染髮 (Color), 剪髮 (Cut)' },
+    { id: 't5', label: '電髮+剪髮 - 150m', duration: 150, service: '電髮 (Perm), 剪髮 (Cut)' },
+    { id: 't4', label: '漂染套餐 - 180m', duration: 180, service: '漂髮 (Bleach), 全頭染髮 (Color)' },
+];
+const TIME_SLOTS = Array.from({length: 21}, (_, i) => `${Math.floor(i / 2) + 10}:${i % 2 === 0 ? '00' : '30'}`);
+
+let audioCtx = null;
+const playAudioFeedback = (type) => {
+  try {
+    if (!window.AudioContext && !window.webkitAudioContext) return;
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    if (type === 'click') {
+      osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.02);
+      gain.gain.setValueAtTime(0.02, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+      osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.04);
+    }
+  } catch (e) {}
+};
+
+const parseDateFlexible = (dateStr) => {
+  if (!dateStr) return '';
+  try {
+    const cleanStr = String(dateStr).trim(); let d = new Date(cleanStr);
+    if (!isNaN(d.getTime())) return d.toLocaleDateString('en-CA');
+    return cleanStr.split(' ')[0];
+  } catch (e) { return String(dateStr); }
+};
+const formatShortDate = parseDateFlexible;
+const getWaLink = (phone) => phone ? `https://wa.me/852${String(phone).replace(/\D/g, '').slice(-8)}` : '#';
+const getFullName = (record) => record ? `${record.firstName || ''} ${record.lastName || ''}`.trim() || record.name || 'Unknown' : 'Unknown';
+const parsePriceRobust = (val) => val ? (isNaN(Number(String(val).replace(/[^0-9.-]+/g, ""))) ? 0 : Number(String(val).replace(/[^0-9.-]+/g, ""))) : 0;
+const cleanStylistName = (name) => name ? String(name).trim() : 'Others';
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('checkout'); 
+  const [crmViewMode, setCrmViewMode] = useState('cards'); 
+  const [crmSortBy, setCrmSortBy] = useState('latestVisit'); 
+  const [crmSearchQuery, setCrmSearchQuery] = useState(''); 
+  const [expandedHistory, setExpandedHistory] = useState({});
+  const [notification, setNotification] = useState(null);
+
+  const [dataHubUnlocked, setDataHubUnlocked] = useState(false);
+  const [authPassword, setAuthPassword] = useState('');
+  
+  const [deleteConfirm, setDeleteConfirm] = useState(null); 
+  const [editModal, setEditModal] = useState(null); 
+  const [profileEditData, setProfileEditData] = useState(null);
+  const [clientDeleteConfirm, setClientDeleteConfirm] = useState(null);
+  const [aptDeleteConfirm, setAptDeleteConfirm] = useState(null);
+  const [showServicesConfig, setShowServicesConfig] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const [driveApiUrl, setDriveApiUrl] = useState(() => localStorage.getItem('headline_drive_api_v13') || 'https://script.google.com/macros/s/AKfycbwLCVTWXuMmUx3-XM18RcRbySm08cZlRTGdJSn8RmTedtNAQyjjR6pPQhHD8nDx9njWug/exec');
+  const [calendarApiUrl, setCalendarApiUrl] = useState(() => localStorage.getItem('headline_calendar_api_v13') || 'https://script.google.com/macros/s/AKfycbwkJ5cLdYjXyVlRdAwGMBjMdJinl2ilMGEBy_OEi6yOk2V_O06Lz2j8ce8jw_NIx4DoPQ/exec');
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const [calendarEvents, setCalendarEvents] = useState([]);
+  const [isCalendarLoading, setIsCalendarLoading] = useState(false);
+  const [schedViewMode, setSchedViewMode] = useState('day'); 
+  const [schedSelectedDate, setSchedSelectedDate] = useState(new Date());
+  const [schedDetailModal, setSchedDetailModal] = useState(null);
+  const [schedAddEditModal, setSchedAddEditModal] = useState(null);
+  const [schedClientMatches, setSchedClientMatches] = useState([]);
+  const [schedFilterStylist, setSchedFilterStylist] = useState('All');
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  const [dashboardPeriod, setDashboardPeriod] = useState('month');
+  const [dashboardDateRef, setDashboardDateRef] = useState(new Date());
+  const [dashboardStartDate, setDashboardStartDate] = useState('');
+  const [dashboardEndDate, setDashboardEndDate] = useState('');
+  const [marketingMetrics, setMarketingMetrics] = useState(() => JSON.parse(localStorage.getItem('headline_marketing_metrics_v2') || '{}'));
+  const [hairServices, setHairServices] = useState(() => JSON.parse(localStorage.getItem('headline_services_v11') || JSON.stringify(defaultServices)));
+
+  useEffect(() => { const interval = setInterval(() => setCurrentTime(new Date()), 60000); return () => clearInterval(interval); }, []);
+  useEffect(() => { localStorage.setItem('headline_services_v11', JSON.stringify(hairServices)); }, [hairServices]);
+  useEffect(() => { localStorage.setItem('headline_drive_api_v13', driveApiUrl); }, [driveApiUrl]);
+  useEffect(() => { localStorage.setItem('headline_calendar_api_v13', calendarApiUrl); }, [calendarApiUrl]);
+  useEffect(() => { localStorage.setItem('headline_marketing_metrics_v2', JSON.stringify(marketingMetrics)); }, [marketingMetrics]);
+
+  const getApiUrl = (baseUrl, action) => {
+    if (!baseUrl) return '';
+    try { const url = new URL(baseUrl); url.searchParams.set('action', action); return url.toString(); } 
+    catch (e) { return `${baseUrl}?action=${action}`; }
+  };
+  
+  const getInitialForm = () => ({
+    customerId: '', clientType: 'New', sourceDetail: 'Walk-in', referredBy: '', language: 'ZH', stylist: 'Man',
+    firstName: '', lastName: '', gender: 'Female', phone: '', email: '', edmConsent: '', birthMonth: '',
+    customerSource: '熟客 (Regular)', date: new Date().toISOString().split('T')[0], selectedServices: [], customService: '',
+    retailItems: '', retailPrice: '', subtotal: '', discountPct: '0', price: '', paymentMethod: 'Cash', formula: '',
+    hairTexture: '正常', interests: [], customInterest: '', notes: '', photoLink: '', nextSuggest: '', _eventId: null, _stylist: null
+  });
+
+  const [formData, setFormData] = useState(getInitialForm());
+  const [submitting, setSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showNameSuggest, setShowNameSuggest] = useState(false);
+  const [nameSuggests, setNameSuggests] = useState([]);
+  
+  const [rawHistoryRecords, setRawHistoryRecords] = useState(() => {
+    try {
+        const parsed = JSON.parse(localStorage.getItem('headline_salon_history_v11') || '[]');
+        return Array.isArray(parsed) ? parsed.map((r, i) => ({ ...r, serviceId: r.serviceId || `S-OLD-${Date.now()}-${i}` })) : [];
+    } catch(e) { return []; }
+  });
+
+  const historyRecords = useMemo(() => {
+    return rawHistoryRecords.map(r => ({...r, stylist: r.stylist ? String(r.stylist).trim() : 'Unknown', price: Number(String(r.price).replace(/[^0-9.-]+/g, "")) || 0}));
+  }, [rawHistoryRecords]);
+
+  const activeTheme = STYLIST_THEMES[formData.stylist] || STYLIST_THEMES['Man'];
+
+  useEffect(() => { localStorage.setItem('headline_salon_history_v11', JSON.stringify(rawHistoryRecords)); }, [rawHistoryRecords]);
+
+  const triggerNotification = (msg) => { setNotification(msg); setTimeout(() => setNotification(null), 3000); };
+  const handleTabChange = (tab) => { playAudioFeedback('click'); setActiveTab(tab); if(tab !== 'datahub') setDataHubUnlocked(false); };
+  const handleInputChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+  const toggleArrayItem = (f, i) => { playAudioFeedback('click'); setFormData(p => ({ ...p, [f]: (p[f]||[]).includes(i) ? p[f].filter(s=>s!==i) : [...(p[f]||[]), i] })); };
+
+  useEffect(() => {
+    const finalPrice = Math.round(((parseInt(formData.subtotal)||0) + (parseInt(formData.retailPrice)||0)) * (1 - (parseInt(formData.discountPct)||0)/100));
+    setFormData(prev => ({ ...prev, price: finalPrice.toString() }));
+  }, [formData.subtotal, formData.retailPrice, formData.discountPct]);
+
+  const fetchCalendarEvents = async () => {
+    if (!calendarApiUrl) return;
+    setIsCalendarLoading(true);
+    try {
+      const res = await fetch(getApiUrl(calendarApiUrl, 'get_events'));
+      const data = await res.json();
+      if (data.status === 'success') setCalendarEvents(data.data);
+    } catch (e) {} finally { setIsCalendarLoading(false); }
+  };
+
+  useEffect(() => { fetchCalendarEvents(); }, [calendarApiUrl]);
+
+  const checkConflict = (stylist, dateStr, timeStr, durationMins, excludeEventId = null) => {
+    if(!stylist || !dateStr || !timeStr || !durationMins) return false;
+    const [hour, min] = timeStr.split(':');
+    const start = new Date(dateStr);
+    start.setHours(parseInt(hour, 10), parseInt(min, 10), 0);
+    const end = new Date(start.getTime() + parseInt(durationMins, 10) * 60000);
+
+    return calendarEvents.some(e => {
+        if (excludeEventId && e.id === excludeEventId) return false;
+        if (e.stylist !== stylist) return false;
+        const eStart = new Date(e.startTime);
+        const eEnd = new Date(e.endTime);
+        if (isNaN(eStart.getTime()) || isNaN(eEnd.getTime())) return false;
+        return (start < eEnd && eStart < end);
+    });
+  };
+
+  const handleSaveCalendarEvent = async (e) => {
+    e.preventDefault();
+    if (checkConflict(schedAddEditModal.stylist, schedAddEditModal.date, schedAddEditModal.time, schedAddEditModal.duration, schedAddEditModal.id)) {
+        playAudioFeedback('warn'); triggerNotification('⚠️ 警告：該時段已有預約，將強行排入！');
+    }
+
+    const [hour, min] = schedAddEditModal.time.split(':');
+    const start = new Date(schedAddEditModal.date);
+    start.setHours(parseInt(hour, 10), parseInt(min, 10), 0);
+    const end = new Date(start.getTime() + (parseInt(schedAddEditModal.duration) || 60) * 60 * 1000);
+    const fakeId = schedAddEditModal.id || ('evt_' + Date.now());
+
+    const payload = {
+        action: 'create_event', stylist: schedAddEditModal.stylist,
+        title: `${schedAddEditModal.clientName} | ${schedAddEditModal.service}`,
+        description: schedAddEditModal.phone ? `Phone: ${schedAddEditModal.phone}\n${schedAddEditModal.notes}` : schedAddEditModal.notes,
+        startTime: start.toISOString(), endTime: end.toISOString()
+    };
+
+    setCalendarEvents(prev => [...prev.filter(ev => ev.id !== schedAddEditModal.id), { id: fakeId, ...payload }]);
+    setSchedAddEditModal(null);
+    playAudioFeedback('success');
+
+    if (!calendarApiUrl) return triggerNotification('✅ 已本地新增預約 (未設定 API)');
+
+    if (schedAddEditModal.id) {
+        try { await fetch(getApiUrl(calendarApiUrl, 'delete_event'), { method: 'POST', body: JSON.stringify({ action: 'delete_event', stylist: schedAddEditModal.oldStylist, eventId: schedAddEditModal.id }), headers: { 'Content-Type': 'text/plain;charset=utf-8' }}); } catch(err) {}
+    }
+
+    try {
+        triggerNotification('⏳ 雲端同步中...');
+        const res = await fetch(getApiUrl(calendarApiUrl, 'create_event'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }});
+        const result = await res.json();
+        if (result.status === 'success') { triggerNotification('✅ 預約已成功同步至 Google 日曆！'); fetchCalendarEvents(); }
+    } catch(err) { triggerNotification('❌ 同步至 Google 日曆失敗'); }
+  };
+
+  const handleDeleteCalendarEvent = async () => {
+    if (!aptDeleteConfirm) return;
+    setCalendarEvents(prev => prev.filter(ev => ev.id !== aptDeleteConfirm.id));
+    setAptDeleteConfirm(null); setSchedDetailModal(null); playAudioFeedback('success');
+    if (!calendarApiUrl) return triggerNotification('✅ 已本地刪除預約 (未設定 API)');
+
+    try {
+        triggerNotification('⏳ 雲端刪除中...');
+        await fetch(getApiUrl(calendarApiUrl, 'delete_event'), { method: 'POST', body: JSON.stringify({ action: 'delete_event', stylist: aptDeleteConfirm.stylist, eventId: aptDeleteConfirm.id }), headers: { 'Content-Type': 'text/plain;charset=utf-8' }}); 
+        triggerNotification('✅ 已從 Google 日曆刪除'); fetchCalendarEvents();
+    } catch(e) { triggerNotification('❌ 雲端刪除失敗'); }
+  };
+
+  const crmProfiles = useMemo(() => {
+    const profiles = {};
+    historyRecords.forEach(record => {
+      const rawName = getFullName(record);
+      const key = record.customerId ? String(record.customerId).toUpperCase() : rawName.toLowerCase(); 
+      if (!profiles[key]) profiles[key] = {
+          customerId: record.customerId || '', fullName: rawName, gender: record.gender || 'Female',
+          language: record.language || 'CN', phone: record.phone || '', email: record.email || '',
+          edmConsent: record.edmConsent || '', birthMonth: record.birthMonth || '', source: record.customerSource,
+          totalSpent: 0, visitCount: 0, visits: [], latestFormula: '', latestVisitDate: '1970-01-01',
+          preferences: record.notes || '', preferredStylist: record.stylist, interests: [], latestService: '', referralsMade: 0 
+      };
+      const p = profiles[key];
+      if (rawName && rawName !== 'Unknown') p.fullName = rawName;
+      if (record.phone) p.phone = record.phone;
+      if (!record.isProfileOnly) { p.visitCount++; p.totalSpent += record.price; p.visits.push(record); }
+      const recDate = formatShortDate(record.date);
+      if (recDate > p.latestVisitDate && !record.isProfileOnly) {
+        p.latestVisitDate = recDate; p.preferredStylist = cleanStylistName(record.stylist);
+        if (record.formula) p.latestFormula = record.formula;
+        const validSvcs = (record.services||'').split(',').map(s=>s.trim()).filter(s => s && !s.includes('沒有記錄') && !s.includes('系統匯入') && !s.includes('建立檔案'));
+        if(validSvcs.length > 0) p.latestService = validSvcs.join(', ');
+      }
+      if (record.interests) {
+          const arr = Array.isArray(record.interests) ? record.interests : String(record.interests).split(',').map(s=>s.trim());
+          arr.forEach(i => { if(i && !p.interests.includes(i)) p.interests.push(i) });
+      }
+    });
+
+    Object.values(profiles).forEach(p => {
+        if (p.customerId) {
+            p.referralsMade = historyRecords.filter(r => {
+                if (!r.referredBy || !r.referredBy.trim()) return false;
+                const ref = r.referredBy.toLowerCase();
+                return ref.includes(p.customerId.toLowerCase()) || (p.phone && p.phone.length > 5 && ref.includes(p.phone)) || (p.fullName && p.fullName.length > 1 && ref.includes(p.fullName.toLowerCase()));
+            }).length;
+        }
+    });
+
+    let result = Object.values(profiles).map(p => {
+      let tags = [];
+      if (p.totalSpent >= 8000) tags.push({ label: 'VIP', color: 'bg-amber-100 text-amber-900 border-amber-300' });
+      const isReferred = p.visits.some(v => v.customerSource?.includes('Referral') || v.referredBy?.trim());
+      if (p.visitCount === 1) tags.push({ label: isReferred ? '🎁 首客推薦優惠' : '新客', color: isReferred ? 'bg-pink-100 text-pink-800' : 'bg-emerald-100 text-emerald-900' });
+      if (p.referralsMade > 0) tags.push({ label: `⭐ 推薦獎賞`, color: 'bg-yellow-100 text-yellow-800' });
+      
+      let lastVisit = new Date(p.latestVisitDate === '1970-01-01' ? Date.now() : p.latestVisitDate);
+      let daysSince = isNaN(lastVisit.getTime()) ? 0 : Math.floor((new Date() - lastVisit) / 86400000);
+      if (daysSince > 90 && p.visitCount > 0) tags.push({ label: '⚠️ 流失風險', color: 'bg-red-100 text-red-900 border-red-300' });
+      
+      p.visits.sort((a,b) => formatShortDate(b.date).localeCompare(formatShortDate(a.date)));
+      return { ...p, tags, daysSince };
+    });
+
+    if (crmSortBy === 'latestVisit') result.sort((a, b) => (b.latestVisitDate || '').localeCompare(a.latestVisitDate || ''));
+    if (crmSortBy === 'totalSpent') result.sort((a, b) => b.totalSpent - a.totalSpent);
+    if (crmSortBy === 'visitCount') result.sort((a, b) => b.visitCount - a.visitCount);
+    if (crmSortBy === 'name_asc') result.sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
+    if (crmSortBy === 'stylist') result.sort((a, b) => (a.preferredStylist || '').localeCompare(b.preferredStylist || ''));
+    return result;
+  }, [historyRecords, crmSortBy]);
+
+  const dashboardData = useMemo(() => {
+    const getPeriodRange = (p, date, off) => {
+        const d = new Date(date);
+        if (p === 'day') { d.setDate(d.getDate() + off); return { start: new Date(d.setHours(0,0,0,0)), end: new Date(d.setHours(23,59,59,999)) }; }
+        if (p === 'week') { d.setDate(d.getDate() + (off * 7)); const diff = d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1); const start = new Date(d.setDate(diff)); start.setHours(0,0,0,0); const end = new Date(start); end.setDate(end.getDate() + 6); end.setHours(23,59,59,999); return { start, end }; }
+        if (p === 'month') { d.setMonth(d.getMonth() + off); return { start: new Date(d.getFullYear(), d.getMonth(), 1), end: new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999) }; }
+        if (p === 'year') { d.setFullYear(d.getFullYear() + off); return { start: new Date(d.getFullYear(), 0, 1), end: new Date(d.getFullYear(), 11, 31, 23, 59, 59, 999) }; }
+        return { start: new Date(`${dashboardStartDate}T00:00:00`), end: new Date(`${dashboardEndDate}T23:59:59`) };
+    };
+
+    const currentRange = getPeriodRange(dashboardPeriod, dashboardDateRef, 0);
+    const prevRange = dashboardPeriod !== 'custom' ? getPeriodRange(dashboardPeriod, dashboardDateRef, -1) : null;
+
+    const getMetrics = (start, end) => {
+        const records = historyRecords.filter(r => !r.isProfileOnly && new Date(parseDateFlexible(r.date)) >= start && new Date(parseDateFlexible(r.date)) <= end);
+        let m = { rev: 0, clients: records.length, retail: 0, newCus: 0, male: 0, female: 0, en: 0, cn: 0, zh: 0 };
+        let dailyMap = {}, serviceMap = {}, stylistMap = { Man: { revenue: 0, count: 0 }, Becky: { revenue: 0, count: 0 }, Sammy: { revenue: 0, count: 0 }, Others: { revenue: 0, count: 0 } }, sourceMap = {};
+        
+        records.forEach(r => {
+            m.rev += r.price; 
+            const sSub = parsePriceRobust(r.subtotal), rSub = parsePriceRobust(r.retailPrice);
+            if (sSub + rSub > 0) m.retail += (rSub / (sSub + rSub)) * r.price; else if (rSub > 0) m.retail += r.price;
+            if (r.gender === 'Male') m.male++; else m.female++;
+            if (r.language === 'EN') m.en++; else if (r.language === 'ZH') m.zh++; else m.cn++;
+            if (r.customerSource?.includes('新客')) {
+                m.newCus++;
+                let src = r.customerSource.includes('Referral') ? '朋友介紹' : (r.customerSource.includes('IG') || r.customerSource.includes('FB') ? 'IG/FB' : 'Walk-in');
+                sourceMap[src] = (sourceMap[src] || 0) + 1;
+            }
+            const sty = ['Man', 'Becky', 'Sammy'].includes(cleanStylistName(r.stylist)) ? cleanStylistName(r.stylist) : 'Others';
+            stylistMap[sty].revenue += r.price; stylistMap[sty].count += 1;
+
+            const recDate = new Date(parseDateFlexible(r.date));
+            if (!isNaN(recDate.getTime())) {
+                const dateKey = dashboardPeriod === 'day' ? (r.timestamp ? new Date(r.timestamp).getHours()+':00' : 'Unknown') : `${recDate.getMonth()+1}/${recDate.getDate()} (${['日','一','二','三','四','五','六'][recDate.getDay()]})`;
+                if (!dailyMap[dateKey]) dailyMap[dateKey] = { time: dateKey, count: 0, revenue: 0, isSunday: recDate.getDay()===0, rawDate: recDate.getTime() };
+                dailyMap[dateKey].count += 1; dailyMap[dateKey].revenue += r.price;
+            }
+
+            (r.services || '').split(',').map(s=>s.trim()).filter(s => s && s!=='系統匯入' && s!=='建立檔案').forEach(s => {
+                if(!serviceMap[s]) serviceMap[s] = { name: s, Man: 0, Becky: 0, Sammy: 0, Others: 0, total: 0 };
+                serviceMap[s][sty] += 1; serviceMap[s].total += 1;
+            });
+        });
+        return { ...m, dailyChart: Object.values(dailyMap).sort((a,b) => a.rawDate - b.rawDate), serviceChart: Object.values(serviceMap).sort((a,b)=>b.total-a.total).slice(0,8), stylistChart: Object.keys(stylistMap).map(k => ({ name: k, ...stylistMap[k] })).sort((a,b)=>b.revenue-a.revenue), sourceChart: Object.keys(sourceMap).map(k => ({ name: k, value: sourceMap[k] })), records };
+    };
+
+    const curr = getMetrics(currentRange.start, currentRange.end);
+    const prev = prevRange ? getMetrics(prevRange.start, prevRange.end) : null;
+    const calcChange = (c, p) => p ? (((c - p) / Math.abs(p)) * 100).toFixed(1) : (c > 0 ? 100 : 0);
+
+    let peak = { time: '-', count: -1, revenue: 0 }, quiet = { time: '-', count: 999999, revenue: 0 };
+    curr.dailyChart.forEach(d => { if (d.count > peak.count) peak = d; if (d.count < quiet.count && d.count > 0) quiet = d; });
+    
+    return {
+        ...curr, peak, quiet: quiet.count === 999999 ? {time:'-',count:0} : quiet,
+        changes: prev ? { rev: calcChange(curr.rev, prev.rev), clients: calcChange(curr.clients, prev.clients), avg: calcChange(curr.clients?curr.rev/curr.clients:0, prev.clients?prev.rev/prev.clients:0), newCus: calcChange(curr.newCus, prev.newCus) } : null,
+        avgSpending: curr.clients ? (curr.rev / curr.clients).toFixed(0) : 0,
+        retailPct: curr.rev ? ((curr.retail / curr.rev) * 100).toFixed(1) : 0,
+        malePct: curr.clients ? ((curr.male / curr.clients) * 100).toFixed(0) : 0, femalePct: curr.clients ? ((curr.female / curr.clients) * 100).toFixed(0) : 0,
+        enPct: (curr.en+curr.cn+curr.zh) ? ((curr.en / (curr.en+curr.cn+curr.zh)) * 100).toFixed(0) : 0, zhPct: (curr.en+curr.cn+curr.zh) ? ((curr.zh / (curr.en+curr.cn+curr.zh)) * 100).toFixed(0) : 0, cnPct: (curr.en+curr.cn+curr.zh) ? ((curr.cn / (curr.en+curr.cn+curr.zh)) * 100).toFixed(0) : 0,
+        newCusPct: curr.clients ? ((curr.newCus / curr.clients) * 100).toFixed(0) : 0, retCusPct: curr.clients ? (((curr.clients - curr.newCus) / curr.clients) * 100).toFixed(0) : 0,
+    };
+  }, [historyRecords, dashboardPeriod, dashboardDateRef, dashboardStartDate, dashboardEndDate]);
+
+  const handleNameSearchInput = (e) => {
+    const val = e.target.value;
+    setFormData(prev => ({ ...prev, firstName: val }));
+    if (val.trim().length > 0) {
+      const matches = crmProfiles.filter(p => String(p.fullName || '').toLowerCase().includes(val.toLowerCase()) || (p.phone && String(p.phone).includes(val)));
+      setNameSuggests(matches); setShowNameSuggest(matches.length > 0);
+    } else { setShowNameSuggest(false); setFormData(prev => ({ ...prev, customerId: '' })); }
+  };
+
+  const handleSelectSuggest = (profile) => {
+    playAudioFeedback('click');
+    setFormData(prev => ({
+      ...prev, customerId: profile.customerId, clientType: 'Repeated', firstName: profile.fullName || '', lastName: '',
+      gender: profile.gender || 'Female', language: profile.language || 'ZH', phone: profile.phone || '', email: profile.email || '',
+      edmConsent: profile.edmConsent || '', birthMonth: profile.birthMonth || '', customerSource: '舊客 (Repeated)',
+      interests: profile.interests || [], hairTexture: profile.latestVisitDate !== '1970-01-01' && profile.visits && profile.visits.length > 0 ? profile.visits[0].hairTexture || '正常' : '正常'
+    }));
+    setShowNameSuggest(false); triggerNotification(`✅ 已成功帶入舊客資料`);
+  };
+
+  const handleCheckoutAppointment = (apt, stylist) => {
+    const existingClient = crmProfiles.find(p => p.fullName === apt.clientName || (p.phone && p.phone === apt.phone));
+    if (existingClient) {
+      handleSelectSuggest(existingClient);
+      setFormData(prev => ({ ...prev, stylist: stylist, notes: `預約服務: ${apt.service}\n${apt.notes}`, _eventId: apt.id, _stylist: stylist }));
+    } else {
+      setFormData({ ...getInitialForm(), firstName: apt.clientName, stylist: stylist, phone: apt.phone || '', notes: `預約服務: ${apt.service}\n${apt.notes}`, _eventId: apt.id, _stylist: stylist });
+    }
+    setSchedDetailModal(null); setActiveTab('checkout');
+  };
+
+  const handleSubmitCheckout = (e) => {
+    e.preventDefault();
+    if (!formData.firstName) return triggerNotification('請輸入顧客姓名！');
+    if (!formData.price) return triggerNotification('請確認總結金額！');
+
+    setSubmitting(true);
+    const combinedName = formData.firstName.trim();
+    const finalCustomerId = formData.clientType === 'New' || !formData.customerId ? getNextCustomerId(rawHistoryRecords) : formData.customerId;
+    const finalSource = formData.clientType === 'New' ? `新客 (${formData.sourceDetail})` : (formData.clientType === 'Repeated' && !formData.customerId ? '舊客 (數位首建)' : '舊客 (Repeated)');
+
+    const finalRecord = {
+      ...formData, firstName: combinedName, lastName: '', name: combinedName, customerId: finalCustomerId,
+      serviceId: generateServiceId(!(formData.selectedServices.length || formData.customService.trim())),
+      customerSource: finalSource, services: [...formData.selectedServices, formData.customService].filter(Boolean).join(', '),
+      interests: formData.interests.join(', '), isProfileOnly: false, timestamp: new Date().toISOString()
+    };
+
+    setTimeout(() => {
+      setRawHistoryRecords(prev => [finalRecord, ...prev]);
+      if (driveApiUrl) fetch(getApiUrl(driveApiUrl, 'append'), { method: 'POST', body: JSON.stringify({ action: 'append', record: finalRecord }) }).catch(()=>{});
+      if (formData._eventId && calendarApiUrl) fetch(getApiUrl(calendarApiUrl, 'delete_event'), { method: 'POST', body: JSON.stringify({ action: 'delete_event', eventId: formData._eventId }) }).catch(()=>{});
+      setSubmitting(false); playAudioFeedback('cashier'); setShowSuccessModal(true); setFormData(getInitialForm());
+    }, 400); 
+  };
+
+  const currentMonthKey = `${dashboardDateRef.getFullYear()}-${String(dashboardDateRef.getMonth() + 1).padStart(2, '0')}`;
+  
+  // Custom Dashboard Tooltips
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length > 0 && payload[0] && payload[0].payload) {
+      const p = payload[0].payload;
+      return (
+        <div className="bg-white p-3 border border-[#E8DCC8] rounded-xl shadow-lg">
+          <p className="font-bold text-[#4A2511] mb-1">{label}</p>
+          <p className="text-[#8B5A2B] font-bold">客數: {p.count || 0} 人</p>
+          <p className="text-emerald-600 font-bold">營收: ${(p.revenue || 0).toLocaleString()}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const MeterChart = ({ title, data, colors }) => {
+    const safeData = data.map(d => ({ ...d, value: isNaN(Number(d.value)) ? 0 : Number(d.value) }));
+    const total = safeData.reduce((sum, item) => sum + item.value, 0);
+    const displayData = total === 0 ? [{ name: '無資料', value: 1 }] : safeData;
+    const displayColors = total === 0 ? ['#e5e7eb'] : colors;
+
+    return (
+      <div className="bg-white p-4 rounded-3xl shadow-sm border border-[#E8DCC8] flex flex-col items-center justify-center relative overflow-hidden">
+        <h3 className="text-sm font-bold text-gray-500 mb-2">{title}</h3>
+        <div style={{ width: '100%', height: 120 }}>
+          <ResponsiveContainer><PieChart><Pie data={displayData} cx="50%" cy="100%" startAngle={180} endAngle={0} innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="value">{displayData.map((e, i) => <Cell key={i} fill={displayColors[i % displayColors.length]} />)}</Pie>{total > 0 && <Tooltip contentStyle={{borderRadius:'8px',fontWeight:'bold'}}/>}</PieChart></ResponsiveContainer>
+        </div>
+        <div className="flex flex-wrap justify-center gap-3 mt-2 text-xs font-bold">
+          {total > 0 ? safeData.map((e, i) => e.value > 0 && <div key={e.name} className="flex items-center gap-1"><span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[i] }}></span>{e.name} ({e.value}%)</div>) : <span className="text-gray-400">尚無數據</span>}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="h-screen flex flex-col font-sans selection:bg-[#E8DCC8] selection:text-[#4A2511] overflow-hidden bg-[#F6EFE9] text-[#4A2511]">
+      {notification && <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center space-x-3 font-bold text-xl" style={{ backgroundColor: activeTheme.hex }}><Icons.Check /> <span>{notification}</span></div>}
+      
+      <header className="shrink-0 z-40 px-6 py-2 flex justify-between items-center bg-white/90 backdrop-blur-md border-b border-[#E8DCC8] shadow-sm">
+        <div className="flex items-center space-x-8">
+          <div className="flex flex-col items-start justify-center select-none pt-1">
+            <h1 className="text-3xl font-bold tracking-[0.2em] leading-none text-[#4A2511] flex items-center">HEADLINE <span className="text-[10px] font-bold text-gray-400 tracking-normal ml-3 mt-1 bg-gray-100 px-1.5 py-0.5 rounded border">v12.8.2 Pro</span></h1>
+            <span className="text-xs tracking-[0.4em] uppercase mt-1 font-semibold text-gray-500">Hair Salon</span>
+          </div>
+          <div className="flex items-center space-x-1 bg-[#F6EFE9] p-1 rounded-2xl border border-[#E8DCC8]">
+            {[{ id: 'scheduler', icon: Icons.Calendar, label: '預約排程' }, { id: 'checkout', icon: Icons.Gift, label: '現場結帳' }, { id: 'crm', icon: Icons.User, label: '客戶資料庫' }, { id: 'dashboard', icon: Icons.Chart, label: '數據報表' }, { id: 'datahub', icon: Icons.Database, label: '資料中心' }].map(t => (
+              <button key={t.id} onClick={() => handleTabChange(t.id)} className={`px-5 py-2.5 rounded-xl text-lg font-bold flex items-center space-x-2 transition-all ${activeTab === t.id ? 'text-white shadow-md' : 'text-gray-500 hover:bg-white/50'}`} style={activeTab === t.id ? { backgroundColor: activeTheme.hex } : {}}><t.icon /> <span>{t.label}</span></button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar">
+        
+        {/* ==========================================
+            TAB 0: SCHEDULER
+            ========================================== */}
+        {activeTab === 'scheduler' && (
+          <div className="w-full max-w-[1500px] mx-auto animate-in fade-in duration-300 h-full flex flex-col">
+             <div className="bg-white border border-[#E8DCC8] rounded-3xl p-8 shadow-sm flex flex-col h-full">
+                <div className="flex justify-between items-center mb-6 border-b-2 border-gray-100 pb-5">
+                   <div>
+                      <h2 className="text-4xl font-black flex items-center space-x-4 text-[#4A2511]">
+                         <div className="w-3 h-12 rounded-full" style={{ backgroundColor: activeTheme.hex }}></div>
+                         <span>預約排程 (Scheduler)</span>
+                      </h2>
+                   </div>
+                   <div className="flex items-center gap-4">
+                      <div className="flex bg-[#F6EFE9] rounded-2xl p-1 h-[48px] mr-2">
+                        <select value={schedFilterStylist} onChange={e => setSchedFilterStylist(e.target.value)} className="bg-transparent font-bold text-[#4A2511] px-4 focus:outline-none cursor-pointer border-r border-[#E8DCC8]">
+                            <option value="All">All Stylists</option>
+                            {stylists.filter(s=>s!=='Others').map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <button onClick={() => { playAudioFeedback('click'); setSchedViewMode('day'); }} className={`px-5 rounded-xl font-bold transition-all ${schedViewMode === 'day' ? 'bg-white shadow text-[#4A2511]' : 'text-gray-500'}`}>日</button>
+                        <button onClick={() => { playAudioFeedback('click'); setSchedViewMode('week'); }} className={`px-5 rounded-xl font-bold transition-all ${schedViewMode === 'week' ? 'bg-white shadow text-[#4A2511]' : 'text-gray-500'}`}>週</button>
+                        <button onClick={() => { playAudioFeedback('click'); setSchedViewMode('month'); }} className={`px-5 rounded-xl font-bold transition-all ${schedViewMode === 'month' ? 'bg-white shadow text-[#4A2511]' : 'text-gray-500'}`}>月</button>
+                      </div>
+                      <button onClick={() => { playAudioFeedback('click'); fetchCalendarEvents(); }} className="bg-gray-100 text-gray-600 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors shadow-sm">
+                         <Icons.Refresh className={isCalendarLoading ? "animate-spin" : ""} /> <span>同步日曆</span>
+                      </button>
+                      <button onClick={() => { playAudioFeedback('click'); setSchedAddEditModal({ date: schedSelectedDate.toLocaleDateString('en-CA'), time: '12:00', duration: 60, stylist: schedFilterStylist === 'All' ? 'Man' : schedFilterStylist, clientName: '', service: '', phone: '', notes: '' }); }} className="bg-[#8B5A2B] text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-[#6D3A14] transition-colors shadow-sm">
+                         <Icons.Plus /> <span>新增預約</span>
+                      </button>
+                   </div>
+                </div>
+
+                {(schedViewMode === 'day' || schedViewMode === 'month') && (
+                   <div className="flex justify-between items-center mb-6 bg-[#F6EFE9]/50 p-4 rounded-2xl border border-[#E8DCC8]">
+                      <button onClick={() => { const d = new Date(schedSelectedDate); if(schedViewMode==='day') d.setDate(d.getDate() - 1); else d.setMonth(d.getMonth() - 1); setSchedSelectedDate(d); }} className="p-2 hover:bg-white rounded-xl transition-colors text-[#4A2511] font-bold flex items-center"><Icons.ChevronLeft /> {schedViewMode==='day' ? '前一天' : '上個月'}</button>
+                      <h3 className="text-2xl font-black text-[#8B5A2B]">{schedViewMode==='day' ? schedSelectedDate.toLocaleDateString('zh-HK', { month: 'long', day: 'numeric', weekday: 'long' }) : schedSelectedDate.toLocaleDateString('zh-HK', { year:'numeric', month: 'long' })}</h3>
+                      <button onClick={() => { const d = new Date(schedSelectedDate); if(schedViewMode==='day') d.setDate(d.getDate() + 1); else d.setMonth(d.getMonth() + 1); setSchedSelectedDate(d); }} className="p-2 hover:bg-white rounded-xl transition-colors text-[#4A2511] font-bold flex items-center">{schedViewMode==='day' ? '後一天' : '下個月'} <Icons.ChevronRight /></button>
+                   </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto border-2 border-[#E8DCC8] rounded-2xl bg-gray-50 custom-scrollbar relative flex flex-col">
+                   {schedViewMode === 'day' && (() => {
+                       const visibleStylists = schedFilterStylist === 'All' ? stylists.filter(s=>s!=='Others') : [schedFilterStylist];
+                       const isToday = schedSelectedDate.toDateString() === currentTime.toDateString();
+                       const currentHour = currentTime.getHours();
+                       const currentMin = currentTime.getMinutes();
+                       const showTimeLine = isToday && currentHour >= 10 && currentHour < 21;
+                       const timeLineTop = showTimeLine ? ((currentHour - 10) * 64) + (currentMin / 60) * 64 : -100;
+
+                       return (
+                         <div className="flex min-w-[800px] relative">
+                            {showTimeLine && (
+                                <div className="absolute left-24 right-0 border-b-[3px] border-red-500 z-30 pointer-events-none flex items-center" style={{ top: `${timeLineTop + 64}px` }}>
+                                    <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full absolute -left-12">{currentHour}:{currentMin.toString().padStart(2,'0')}</div>
+                                    <div className="w-2 h-2 rounded-full bg-red-500 absolute -left-1"></div>
+                                </div>
+                            )}
+                            
+                            <div className="w-24 shrink-0 bg-[#F6EFE9] border-r-2 border-[#E8DCC8] flex flex-col sticky left-0 z-20">
+                               <div className="h-16 border-b-2 border-[#E8DCC8] bg-[#F6EFE9] sticky top-0 z-30"></div>
+                               {TIME_SLOTS.map((time, i) => <div key={i} className={`h-16 flex items-start justify-end pr-2 pt-1 font-bold text-gray-400 text-sm ${i % 2 === 0 ? 'border-b border-[#E8DCC8]' : 'border-b-2 border-[#E8DCC8]'}`}>{i % 2 === 0 ? time : ''}</div>)}
+                            </div>
+                            {visibleStylists.map(stylist => {
+                               const dateStr = schedSelectedDate.toLocaleDateString('en-CA');
+                               const dayEvents = calendarEvents.filter(e => { const eDate = new Date(e.startTime); return !isNaN(eDate.getTime()) && cleanStylistName(e.stylist) === stylist && eDate.toLocaleDateString('en-CA') === dateStr; });
+                               return (
+                                  <div key={stylist} className="flex-1 min-w-[200px] border-r-2 border-[#E8DCC8] relative bg-white">
+                                     <div className="h-16 border-b-2 border-[#E8DCC8] bg-white sticky top-0 z-20 flex items-center justify-center">
+                                        <span className="text-xl font-black px-4 py-1.5 rounded-lg text-white shadow-sm" style={{ backgroundColor: STYLIST_THEMES[stylist].hex }}>{stylist}</span>
+                                     </div>
+                                     {TIME_SLOTS.map((_, i) => (<div key={i} className={`h-16 w-full ${i % 2 === 0 ? 'border-b border-gray-50' : 'border-b-2 border-gray-100'}`}></div>))}
+                                     {dayEvents.map((evt, i) => {
+                                        const eStart = new Date(evt.startTime);
+                                        const hour = eStart.getHours(), min = eStart.getMinutes();
+                                        if (hour < 10 || hour >= 21) return null;
+                                        const topPx = ((hour - 10) * 64) + (min / 60) * 64; 
+                                        let durationMins = Math.round((new Date(evt.endTime) - new Date(evt.startTime)) / 60000);
+                                        if (!durationMins || durationMins <= 0) durationMins = 60;
+                                        const heightPx = Math.max((durationMins / 60) * 64 - 4, 30); 
+                                        const parts = evt.title.split('|');
+                                        let clientName = parts[0]?.trim() || evt.title, service = parts[1]?.trim() || '', phone = '', notes = evt.description || '';
+                                        if (notes.includes('Phone:')) { const splitNotes = notes.split('\n'); phone = splitNotes[0].replace('Phone:', '').trim(); notes = splitNotes.slice(1).join('\n'); }
+                                        const parsedApt = { id: evt.id, stylist, clientName, service, time: `${hour}:${min.toString().padStart(2,'0')}`, duration: durationMins, date: dateStr, phone, notes };
+                                        
+                                        return (
+                                           <div key={i} onClick={() => { playAudioFeedback('click'); setSchedDetailModal(parsedApt); }} className="absolute left-1 right-1 rounded-xl p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden border-2 z-10" style={{ top: `${topPx + 66}px`, height: `${heightPx}px`, backgroundColor: STYLIST_THEMES[stylist].light, borderColor: STYLIST_THEMES[stylist].hex, borderLeftWidth: '6px' }}>
+                                               <div className="flex justify-between items-start mb-1">
+                                                  <span className="font-black text-[#4A2511] text-base leading-tight truncate">{clientName}</span>
+                                                  <span className="text-xs font-bold text-[#8B5A2B] bg-white/80 px-2 py-0.5 rounded shadow-sm">{parsedApt.time}</span>
+                                               </div>
+                                               <div className="text-xs font-bold text-gray-700 truncate mb-1">{service}</div>
+                                               {heightPx > 60 && phone && <div className="text-[10px] text-gray-500 font-mono">📞 {phone}</div>}
+                                           </div>
+                                        );
+                                     })}
+                                  </div>
+                               )
+                            })}
+                         </div>
+                       );
+                   })()}
+
+                   {schedViewMode === 'week' && (() => {
+                       const visibleStylists = schedFilterStylist === 'All' ? stylists.filter(s=>s!=='Others') : [schedFilterStylist];
+                       return (
+                         <table className="w-full text-left border-collapse min-w-[800px] bg-white">
+                            <thead className="bg-[#F6EFE9] sticky top-0 z-10 shadow-sm border-b-2 border-[#E8DCC8]">
+                              <tr>
+                                 <th className="p-4 border-r border-[#E8DCC8] font-black text-[#4A2511] w-32 text-center text-lg">日期</th>
+                                 {visibleStylists.map(stylist => <th key={stylist} className="p-4 border-r border-[#E8DCC8] font-black text-center text-xl" style={{ color: STYLIST_THEMES[stylist].hex }}>{stylist}</th>)}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Array.from({length: 7}, (_, i) => {
+                                 const d = new Date(); d.setDate(d.getDate() + i);
+                                 const dateString = d.toLocaleDateString('en-CA'); 
+                                 return (
+                                    <tr key={dateString} className="hover:bg-gray-50">
+                                      <td className="p-4 border-b border-r border-[#E8DCC8] align-top text-center"><div className="font-black text-xl text-[#4A2511]">{dateString.slice(5)}</div><div className="text-xs font-bold text-gray-400 mt-1">{d.toLocaleDateString('zh-HK', { weekday: 'short' })}</div></td>
+                                      {visibleStylists.map(stylist => {
+                                         const dayEvents = calendarEvents.filter(e => { const eD = new Date(e.startTime); return !isNaN(eD.getTime()) && eD.toLocaleDateString('en-CA') === dateString && cleanStylistName(e.stylist) === stylist; }).sort((a,b)=>new Date(a.startTime)-new Date(b.startTime));
+                                         return (
+                                            <td key={stylist} className="p-3 border-b border-r border-[#E8DCC8] align-top">
+                                              <div className="space-y-3">
+                                                 {dayEvents.map((evt, j) => {
+                                                    const eDate = new Date(evt.startTime);
+                                                    const timeString = eDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                                    const parts = evt.title.split('|'), clientName = parts[0]?.trim() || evt.title, service = parts[1]?.trim() || '';
+                                                    let phone = '', notes = evt.description || '';
+                                                    if (notes.includes('Phone:')) { const splitNotes = notes.split('\n'); phone = splitNotes[0].replace('Phone:', '').trim(); notes = splitNotes.slice(1).join('\n'); }
+                                                    return (
+                                                       <div key={j} onClick={() => setSchedDetailModal({ id: evt.id, stylist, clientName, service, time: timeString, duration: 60, date: dateString, phone, notes })} className="group relative bg-white border p-3 rounded-xl shadow-sm hover:shadow-md cursor-pointer" style={{ borderColor: STYLIST_THEMES[stylist].light, borderLeftWidth: '6px', borderLeftColor: STYLIST_THEMES[stylist].hex }}>
+                                                          <div className="flex justify-between items-start"><span className="font-black text-[#4A2511] text-base">{clientName}</span><span className="text-xs font-bold text-[#8B5A2B] bg-[#F6EFE9] px-2 py-0.5 rounded-md">{timeString}</span></div>
+                                                          <div className="text-xs font-bold text-gray-500 mt-1 truncate">{service}</div>
+                                                       </div>
+                                                    );
+                                                 })}
+                                              </div>
+                                            </td>
+                                         )
+                                      })}
+                                    </tr>
+                                 );
+                              })}
+                            </tbody>
+                         </table>
+                       );
+                   })()}
+
+                   {schedViewMode === 'month' && (() => {
+                       const year = schedSelectedDate.getFullYear(), month = schedSelectedDate.getMonth();
+                       const firstDay = new Date(year, month, 1).getDay(), daysInMonth = new Date(year, month + 1, 0).getDate();
+                       const days = [];
+                       for (let i = 0; i < firstDay; i++) days.push(null);
+                       for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
+                       const weeks = []; let currentWeek = [];
+                       days.forEach((day, i) => { currentWeek.push(day); if ((i + 1) % 7 === 0 || i === days.length - 1) { while(currentWeek.length < 7) currentWeek.push(null); weeks.push(currentWeek); currentWeek = []; }});
+                       const visibleStylists = schedFilterStylist === 'All' ? stylists.filter(s=>s!=='Others') : [schedFilterStylist];
+
+                       return (
+                           <div className="flex-1 flex flex-col bg-gray-50">
+                               <div className="grid grid-cols-7 border-b border-[#E8DCC8] bg-[#F6EFE9]">
+                                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d} className="p-3 text-center font-bold text-gray-500 text-sm uppercase">{d}</div>)}
+                               </div>
+                               <div className="flex-1 grid grid-cols-7 grid-rows-5 bg-white">
+                                   {weeks.map((week, wIdx) => week.map((day, dIdx) => {
+                                       if (!day) return <div key={`empty-${wIdx}-${dIdx}`} className="border-b border-r border-gray-100 bg-gray-50/50 p-2"></div>;
+                                       const dateStr = day.toLocaleDateString('en-CA'), isToday = dateStr === new Date().toLocaleDateString('en-CA');
+                                       const dayEvents = calendarEvents.filter(e => { const eD = new Date(e.startTime); return !isNaN(eD.getTime()) && eD.toLocaleDateString('en-CA') === dateStr && visibleStylists.includes(cleanStylistName(e.stylist)); });
+                                       return (
+                                           <div key={dateStr} className={`border-b border-r border-gray-100 p-2 overflow-hidden flex flex-col ${isToday ? 'bg-[#F6EFE9]/30' : ''}`}>
+                                               <div className={`text-sm font-bold mb-1 w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-[#8B5A2B] text-white' : 'text-gray-500'}`}>{day.getDate()}</div>
+                                               <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar pr-1">
+                                                   {dayEvents.slice(0, 5).map((evt, i) => {
+                                                       const eTime = new Date(evt.startTime).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:false});
+                                                       const cName = (evt.title.split('|')[0] || '').trim(), styName = cleanStylistName(evt.stylist);
+                                                       return (
+                                                           <div key={i} className="text-[10px] truncate px-1.5 py-0.5 rounded font-bold cursor-pointer" style={{ backgroundColor: STYLIST_THEMES[styName]?.light, color: STYLIST_THEMES[styName]?.hex }}
+                                                                onClick={() => { const parts = evt.title.split('|'); setSchedDetailModal({ id: evt.id, stylist: styName, clientName: cName, service: parts[1]?.trim()||'', time: eTime, duration:60, date: dateStr, notes: evt.description }); }}>
+                                                               {eTime} {cName}
+                                                           </div>
+                                                       );
+                                                   })}
+                                                   {dayEvents.length > 5 && <div className="text-[10px] text-gray-400 font-bold px-1">+ {dayEvents.length - 5} more</div>}
+                                               </div>
+                                           </div>
+                                       );
+                                   }))}
+                               </div>
+                           </div>
+                       );
+                   })()}
+                </div>
+             </div>
+          </div>
+        )}
+
+        {/* ==========================================
+            TAB 1: CHECKOUT FORM (SPLIT SCREEN IPAD UI)
+            ========================================== */}
+        {activeTab === 'checkout' && (
+          <form onSubmit={handleSubmitCheckout} className="w-full max-w-[1500px] mx-auto animate-in fade-in duration-300">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              
+              {/* LEFT COLUMN: CLIENT PROFILE (White clean background) */}
+              <div className="lg:col-span-5 bg-white border border-gray-200 rounded-[2.5rem] p-8 shadow-sm flex flex-col relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-r from-gray-200 to-gray-100"></div>
+                <h2 className="text-2xl font-black text-gray-800 mb-6 flex items-center space-x-2"><Icons.User /> <span>客資建檔 Client Profile</span></h2>
+                
+                <div className="space-y-6">
+                  {/* Name Input with Auto-Search */}
+                  <div className="relative">
+                     <label className="block text-sm font-bold uppercase tracking-wider mb-2 text-gray-500">顧客全名 Full Name</label>
+                     <input type="text" value={formData.firstName} onChange={handleNameSearchInput} onBlur={() => setTimeout(() => setShowNameSuggest(false), 200)} required placeholder="點此輸入全名 (如: Jacky Cheng)"
+                       className="w-full rounded-2xl py-4 px-5 text-xl font-black bg-gray-50 border-transparent focus:bg-white focus:border-gray-800 border-2 outline-none transition-colors shadow-inner" />
+                     {formData.firstName && <button type="button" onClick={() => setFormData(f=>({...f, firstName: '', customerId: ''}))} className="absolute right-4 top-11 p-1.5 text-gray-400 hover:bg-gray-200 rounded-full transition-colors"><Icons.X /></button>}
+                     
+                     {showNameSuggest && nameSuggests.length > 0 && (
+                        <div className="absolute z-50 top-[100%] mt-2 left-0 right-0 bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
+                           {nameSuggests.map(p => (
+                             <div key={p.customerId} onMouseDown={() => handleSelectSuggest(p)} className="px-5 py-4 border-b last:border-0 hover:bg-gray-50 cursor-pointer flex justify-between items-center">
+                               <div><span className="font-black text-xl text-[#4A2511]">{p.fullName}</span><span className="ml-3 text-sm font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-md">{p.phone}</span></div>
+                               <span className="text-sm font-bold text-[#8B5A2B] bg-[#E8DCC8]/30 px-2 py-1 rounded">{p.customerId}</span>
+                             </div>
+                           ))}
+                        </div>
+                     )}
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                     <label className="block text-sm font-bold uppercase tracking-wider mb-2 text-gray-500">聯絡電話 Phone Number</label>
+                     <input type="tel" value={formData.phone} onClick={()=>playAudioFeedback('click')} onChange={(e) => handleInputChange('phone', e.target.value)} placeholder="09..." 
+                        className="w-full bg-gray-50 border-transparent rounded-2xl py-4 px-5 text-xl font-bold outline-none focus:bg-white focus:border-gray-800 border-2 transition-colors shadow-inner" />
+                  </div>
+
+                  {/* Gender & Language (One-Tap Chips) */}
+                  <div className="grid grid-cols-2 gap-4">
+                     <div>
+                        <label className="block text-sm font-bold uppercase tracking-wider mb-2 text-gray-500">性別 Gender</label>
+                        <div className="flex bg-gray-100 rounded-2xl p-1.5">
+                           <button type="button" onClick={() => {playAudioFeedback('click'); handleInputChange('gender', 'Female')}} className={`flex-1 rounded-xl py-3 text-lg font-black transition-all ${formData.gender === 'Female' ? 'bg-white shadow text-pink-600' : 'text-gray-400 hover:bg-gray-200'}`}>👩 女</button>
+                           <button type="button" onClick={() => {playAudioFeedback('click'); handleInputChange('gender', 'Male')}} className={`flex-1 rounded-xl py-3 text-lg font-black transition-all ${formData.gender === 'Male' ? 'bg-white shadow text-blue-600' : 'text-gray-400 hover:bg-gray-200'}`}>👨 男</button>
+                        </div>
+                     </div>
+                     <div>
+                        <label className="block text-sm font-bold uppercase tracking-wider mb-2 text-gray-500">語言 Language</label>
+                        <div className="flex bg-gray-100 rounded-2xl p-1.5">
+                           <button type="button" onClick={() => {playAudioFeedback('click'); handleInputChange('language', 'ZH')}} className={`flex-1 rounded-xl py-3 text-lg font-black transition-all ${formData.language === 'ZH' ? 'bg-white shadow text-gray-800' : 'text-gray-400 hover:bg-gray-200'}`}>ZH</button>
+                           <button type="button" onClick={() => {playAudioFeedback('click'); handleInputChange('language', 'EN')}} className={`flex-1 rounded-xl py-3 text-lg font-black transition-all ${formData.language === 'EN' ? 'bg-white shadow text-gray-800' : 'text-gray-400 hover:bg-gray-200'}`}>EN</button>
+                           <button type="button" onClick={() => {playAudioFeedback('click'); handleInputChange('language', 'CN')}} className={`flex-1 rounded-xl py-3 text-lg font-black transition-all ${formData.language === 'CN' ? 'bg-white shadow text-gray-800' : 'text-gray-400 hover:bg-gray-200'}`}>CN</button>
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="border-t border-gray-100 pt-6 mt-2">
+                     <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4">Optional 選填資料區</h3>
+                     
+                     <div className="space-y-4">
+                        <div className="flex gap-4 items-center">
+                            <div className="w-1/3">
+                               <label className="block text-xs font-bold text-gray-500 mb-1">生日月份</label>
+                               <select value={formData.birthMonth} onChange={(e) => handleInputChange('birthMonth', e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-3 text-base font-bold outline-none focus:border-gray-500">
+                                 <option value="">- 選擇 -</option>{birthMonthsList.map(m => <option key={m} value={m}>{m}</option>)}
+                               </select>
+                            </div>
+                            <div className="flex-1">
+                               <label className="block text-xs font-bold text-gray-500 mb-1">Email</label>
+                               <input type="email" value={formData.email} onClick={()=>playAudioFeedback('click')} onChange={(e) => handleInputChange('email', e.target.value)} placeholder="example@email.com" 
+                                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-base font-bold outline-none focus:bg-white focus:border-gray-500" />
+                            </div>
+                        </div>
+
+                        {formData.email.trim().length > 0 && (
+                           <label className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100 cursor-pointer animate-in fade-in">
+                             <input type="checkbox" className="w-5 h-5 accent-emerald-600 rounded" checked={formData.edmConsent === 'agree'} onChange={(e) => handleInputChange('edmConsent', e.target.checked ? 'agree' : 'disagree')} />
+                             <span className="text-sm font-bold text-emerald-800">同意接收沙龍專屬優惠與護髮資訊</span>
+                           </label>
+                        )}
+                        
+                        <div>
+                           <label className="block text-xs font-bold text-gray-500 mb-2">客人興趣 / 需求標籤</label>
+                           <div className="flex flex-wrap gap-2">
+                              {defaultInterests.map(interest => (
+                                  <button type="button" key={interest} onClick={() => toggleArrayItem('interests', interest)} className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors border ${formData.interests.includes(interest) ? 'bg-gray-800 text-white border-gray-800' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-100'}`}>
+                                      {interest}
+                                  </button>
+                              ))}
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: STAFF TRANSACTION (Colored background) */}
+              <div className="lg:col-span-7 bg-[#F6EFE9] border border-[#E8DCC8] rounded-[2.5rem] p-8 shadow-sm flex flex-col relative">
+                <div className="absolute top-0 left-0 right-0 h-3" style={{ backgroundColor: activeTheme.hex }}></div>
+                
+                {/* Top Bar: Stylist & Date */}
+                <div className="flex justify-between items-start mb-6">
+                    <div className="flex bg-white rounded-2xl p-1.5 shadow-sm border border-[#E8DCC8]">
+                      {stylists.map(s => (
+                        <button key={s} type="button" onClick={() => { playAudioFeedback('click'); handleInputChange('stylist', s); }}
+                          className={`px-5 py-2.5 rounded-xl text-xl font-black transition-all ${formData.stylist === s ? 'shadow-md text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                          style={formData.stylist === s ? { backgroundColor: STYLIST_THEMES[s].hex } : {}}>{s}</button>
+                      ))}
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-sm border border-[#E8DCC8] px-3 py-1">
+                       <input type="date" value={formData.date} onChange={(e) => handleInputChange('date', e.target.value)} className="bg-transparent text-[#8B5A2B] text-lg font-black outline-none w-[140px] text-center" />
+                    </div>
+                </div>
+
+                {/* Client Status Area (Enlarged) */}
+                <div className="bg-white p-5 rounded-3xl border border-[#E8DCC8] shadow-sm mb-6 flex gap-4">
+                     <div className="flex-1 flex flex-col">
+                        <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">客源狀態 (Client Status)</label>
+                        <div className="flex gap-2">
+                           <div className="flex bg-gray-100 rounded-2xl p-1.5 w-[50%]">
+                              <button type="button" onClick={() => handleInputChange('clientType', 'New')} className={`flex-1 rounded-xl font-black text-lg transition-all ${formData.clientType === 'New' ? 'bg-white shadow text-[#4A2511]' : 'text-gray-400 hover:bg-gray-200'}`}>新客</button>
+                              <button type="button" onClick={() => handleInputChange('clientType', 'Repeated')} className={`flex-1 rounded-xl font-black text-lg transition-all ${formData.clientType === 'Repeated' ? 'bg-white shadow text-[#4A2511]' : 'text-gray-400 hover:bg-gray-200'}`}>舊客</button>
+                           </div>
+                           {formData.clientType === 'New' && (
+                             <select value={formData.sourceDetail} onChange={(e) => handleInputChange('sourceDetail', e.target.value)} className="w-[50%] bg-gray-50 border border-gray-200 rounded-2xl px-4 text-lg font-bold outline-none focus:border-[#8B5A2B]">
+                               <option value="Walk-in">Walk-in</option><option value="Referral">朋友介紹</option><option value="IG/Facebook">IG/FB</option><option value="Google">Google</option>
+                             </select>
+                           )}
+                           {formData.clientType === 'Repeated' && (
+                             <div className="w-[50%] bg-gray-50 border border-gray-200 rounded-2xl px-4 flex items-center justify-center text-gray-400 font-bold">自動歸檔為舊客</div>
+                           )}
+                        </div>
+                     </div>
+                     <div className="w-[120px] flex flex-col shrink-0">
+                        <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">Client ID</label>
+                        <input type="text" value={formData.clientType === 'New' ? getNextCustomerId(rawHistoryRecords) : formData.customerId} readOnly={formData.clientType === 'New'} onChange={(e) => handleInputChange('customerId', e.target.value.toUpperCase())} className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-2 text-xl font-bold text-center font-mono outline-none focus:bg-white" />
+                     </div>
+                </div>
+
+                {/* Services Area */}
+                <div className="mb-6">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-gray-500 mb-3">服務項目 (Services)</label>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {hairServices.map(service => (
+                      <label key={service} className="cursor-pointer">
+                         <input type="checkbox" className="hidden" checked={formData.selectedServices.includes(service)} onChange={() => toggleArrayItem('selectedServices', service)}/>
+                         <div className={`py-3 px-4 rounded-2xl text-base font-bold border-2 transition-all ${formData.selectedServices.includes(service) ? 'shadow-md text-white' : 'bg-white border-transparent text-gray-600 hover:bg-[#E8DCC8]'}`}
+                              style={formData.selectedServices.includes(service) ? { backgroundColor: activeTheme.hex, borderColor: activeTheme.hex } : {}}>{service}</div>
+                      </label>
+                    ))}
+                  </div>
+                  <input type="text" placeholder="+ 其他客製服務或套餐名稱..." value={formData.customService} onChange={(e) => handleInputChange('customService', e.target.value)}
+                    className="w-full bg-white border-transparent rounded-2xl py-3 px-4 text-lg font-bold outline-none focus:border-[#8B5A2B] border-2 transition-colors mb-4 shadow-sm" />
+                </div>
+
+                {/* Billing Area */}
+                <div className="grid grid-cols-12 gap-4 p-5 rounded-3xl mb-6 shadow-sm" style={{ backgroundColor: activeTheme.light, border: `1px solid ${activeTheme.hex}30` }}>
+                  <div className="col-span-3">
+                    <label className="block text-sm font-bold mb-2" style={{ color: activeTheme.hex }}>服務小計 $</label>
+                    <input type="number" placeholder="0" value={formData.subtotal} onChange={(e) => handleInputChange('subtotal', e.target.value)} className="w-full bg-white rounded-2xl py-4 px-4 text-2xl font-black outline-none border border-transparent focus:border-gray-300" style={{ color: activeTheme.hex }} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-bold mb-2" style={{ color: activeTheme.hex }}>折扣 %</label>
+                    <select value={formData.discountPct} onChange={(e) => handleInputChange('discountPct', e.target.value)} className="w-full bg-white rounded-2xl py-4.5 px-2 text-xl font-bold outline-none border border-transparent">
+                      <option value="0">無</option><option value="5">5%</option><option value="10">10%</option><option value="15">15%</option><option value="20">20%</option><option value="30">30%</option><option value="50">50%</option><option value="100">Free</option>
+                    </select>
+                  </div>
+                  <div className="col-span-4">
+                    <label className="block text-sm font-bold mb-2" style={{ color: activeTheme.hex }}>總金額 $ (Total)</label>
+                    <input type="number" required placeholder="0" value={formData.price} onChange={(e) => handleInputChange('price', e.target.value)} className="w-full bg-white rounded-2xl py-4 px-5 text-4xl font-black outline-none border-2 border-transparent focus:border-red-400" style={{ color: activeTheme.hex }} />
+                  </div>
+                  <div className="col-span-3">
+                     <label className="block text-sm font-bold mb-2" style={{ color: activeTheme.hex }}>支付</label>
+                     <div className="flex space-x-2 h-[64px]">
+                       {paymentMethods.filter(m => m.id !== 'Others').map(method => (
+                         <button key={method.id} type="button" onClick={() => handleInputChange('paymentMethod', method.id)}
+                           className={`flex-1 rounded-2xl border-2 transition-all flex flex-col items-center justify-center ${formData.paymentMethod === method.id ? 'bg-white shadow-md' : 'bg-transparent border-transparent hover:bg-white/40'}`}
+                           style={formData.paymentMethod === method.id ? { borderColor: activeTheme.hex, color: activeTheme.hex } : { color: activeTheme.hex, opacity: 0.7 }}>
+                           <method.icon />
+                           <span className="font-bold text-xs mt-1">{method.label}</span>
+                         </button>
+                       ))}
+                     </div>
+                  </div>
+                </div>
+
+                {/* Formula & Notes (Integrated) */}
+                <div className="bg-white rounded-3xl p-5 border border-[#E8DCC8] shadow-sm mb-6 flex-1 flex flex-col">
+                   <div className="flex justify-between items-center mb-2">
+                       <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">化學配方與備註</label>
+                       {currentProfile?.latestFormula && (
+                           <button type="button" onClick={() => { playAudioFeedback('success'); handleInputChange('formula', currentProfile.latestFormula); triggerNotification('✅ 已成功帶入上次配方'); }} 
+                                   className="flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors shadow-sm">
+                               <Icons.Refresh /> <span>♻️ 帶入上次配方</span>
+                           </button>
+                       )}
+                   </div>
+                   <textarea rows={3} placeholder="例: 8B 70ml + 7MT 30ml + 9%..." value={formData.formula} onChange={(e) => handleInputChange('formula', e.target.value)}
+                        className="w-full flex-1 bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xl font-mono focus:bg-white outline-none focus:border-[#8B5A2B] transition-colors mb-4" />
+                   
+                   <div className="flex gap-4">
+                       <div className="flex-1">
+                          <label className="block text-xs font-bold uppercase text-gray-400 mb-1">下次建議快捷鍵</label>
+                          <div className="flex gap-2">
+                             {['3週後修剪', '4週後修剪', '8週後補染'].map(sg => (
+                                 <button key={sg} type="button" onClick={() => setFormData(p => ({...p, nextSuggest: sg}))} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl text-sm transition-colors">{sg}</button>
+                             ))}
+                          </div>
+                       </div>
+                       <div className="flex-1">
+                          <label className="block text-xs font-bold uppercase text-gray-400 mb-1">作品照片 URL</label>
+                          <input type="url" placeholder="貼上照片網址..." value={formData.photoLink} onChange={(e) => handleInputChange('photoLink', e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 px-3 text-sm font-mono outline-none" />
+                       </div>
+                   </div>
+                </div>
+
+                <button type="submit" disabled={submitting} className="w-full text-white font-black py-6 rounded-3xl text-3xl shadow-lg transition-all flex items-center justify-center space-x-3 mt-auto hover:opacity-90 hover:scale-[1.02]"
+                        style={{ backgroundColor: activeTheme.hex, boxShadow: `0 10px 25px -5px ${activeTheme.shadow}` }}>
+                  {submitting ? <span className="animate-spin rounded-full h-8 w-8 border-b-4 border-white"></span> : <><Icons.Check className="w-10 h-10"/> <span>完成結帳並存檔 (Save)</span></>}
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+
+        {/* ==========================================
+            TAB 2: CRM DIRECTORY
+            ========================================== */}
+        {activeTab === 'crm' && (
+          <div className="max-w-[1500px] mx-auto space-y-6">
+            <div className="bg-white border border-[#E8DCC8] rounded-3xl p-8 shadow-sm">
+              <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b-2 border-gray-100 pb-5">
+                <h2 className="text-4xl font-black flex items-center space-x-4 text-[#4A2511] shrink-0">
+                  <div className="w-3 h-12 rounded-full" style={{ backgroundColor: activeTheme.hex }}></div>
+                  <span>客戶檔案庫 ({crmProfiles.length} 位)</span>
+                </h2>
+                
+                <div className="flex flex-wrap items-center justify-end gap-3 w-full">
+                  <div className="flex-1 min-w-[300px] max-w-md relative">
+                    <input type="text" placeholder="🔍 搜尋電話、姓名、配方關鍵字..." value={crmSearchQuery} onChange={(e) => setCrmSearchQuery(e.target.value)} 
+                           className="w-full bg-[#F6EFE9] border border-[#E8DCC8] rounded-2xl py-3 px-4 pr-10 text-lg font-bold outline-none focus:bg-white focus:border-[#8B5A2B] transition-colors" />
+                    {crmSearchQuery && <button type="button" onClick={() => setCrmSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:bg-gray-200 rounded-full transition-colors"><Icons.X className="w-4 h-4" /></button>}
+                  </div>
+                  <div className="flex items-center space-x-3 bg-[#F6EFE9] rounded-2xl p-2.5 px-4 border border-[#E8DCC8]">
+                    <span className="text-sm font-bold text-gray-500 uppercase">Sort:</span>
+                    <select value={crmSortBy} onChange={(e) => setCrmSortBy(e.target.value)} className="bg-transparent text-lg font-bold focus:outline-none text-[#4A2511] cursor-pointer">
+                      <option value="latestVisit">最新到店</option><option value="name_asc">姓名 (A-Z)</option><option value="stylist">設計師</option><option value="totalSpent">消費總額</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {crmProfiles.filter(p => !crmSearchQuery || String(p.fullName).toLowerCase().includes(crmSearchQuery.toLowerCase()) || String(p.phone).includes(crmSearchQuery)).map((client, i) => {
+                  const isExpanded = expandedHistory[client.customerId];
+                  const clientTheme = STYLIST_THEMES[client.preferredStylist] || STYLIST_THEMES['Others'];
+                  return (
+                  <div key={i} className="border-2 rounded-3xl p-6 transition-all bg-white hover:shadow-xl flex flex-col justify-between group relative" style={{ borderColor: clientTheme.light }}>
+                    <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <button onClick={() => setProfileEditData(client)} className="p-2 bg-gray-50 text-gray-400 hover:text-blue-600 rounded-xl transition-colors shadow-sm"><Icons.Edit/></button>
+                        <button onClick={() => setClientDeleteConfirm(client)} className="p-2 bg-red-50 text-red-400 hover:text-red-600 rounded-xl transition-colors shadow-sm"><Icons.Trash/></button>
+                    </div>
+                    <div>
+                      <div className="flex flex-col mb-3 pr-16 relative">
+                          <div className="flex items-center space-x-3 mb-2">
+                              <span className="text-2xl font-black text-[#4A2511] truncate">{client.fullName}</span>
+                              <span className="bg-[#F6EFE9] text-[#8B5A2B] text-xs px-2.5 py-1 rounded-md font-mono font-bold shrink-0 border border-[#E8DCC8]">{client.customerId}</span>
+                          </div>
+                          <div className="flex items-center gap-4 mb-4">
+                             <span className="text-xl font-black text-white px-3 py-1 rounded shadow-sm" style={{ backgroundColor: clientTheme.hex }}>{client.preferredStylist}</span>
+                             <div className="text-xl font-black text-gray-500 flex items-center space-x-2">
+                                <span className={client.gender === 'Male' ? 'text-blue-600' : 'text-pink-600'}>{client.gender === 'Male' ? '男' : '女'}</span>
+                                {client.birthMonth && <span className="text-base">🎂 {client.birthMonth}</span>}
+                             </div>
+                          </div>
+                          <div className="text-sm font-bold text-gray-500 flex items-center flex-wrap gap-2">
+                              {client.phone && <div className="flex items-center gap-1"><span>📞 {client.phone}</span><a href={getWaLink(client.phone)} target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:text-emerald-600 ml-1"><Icons.MessageCircle /></a></div>}
+                              <span className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{client.language}</span>
+                          </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-lg bg-[#F6EFE9]/50 p-5 rounded-2xl mb-4 border border-[#E8DCC8]">
+                        <div><span className="text-sm text-gray-500 uppercase font-bold block mb-1">LTV (總消費)</span><span className="font-black text-[#4A2511] text-2xl">${client.totalSpent.toLocaleString()}</span></div>
+                        <div><span className="text-sm text-gray-500 uppercase font-bold block mb-1">最近造訪</span><span className="font-black text-[#4A2511] text-base">{client.latestVisitDate === '1970-01-01' ? '無紀錄' : <>{client.latestVisitDate} <span className="text-xs font-bold text-gray-400 ml-1">({client.daysSince} 天前)</span></>}</span></div>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <button onClick={() => setExpandedHistory(prev => ({...prev, [client.customerId]: !prev[client.customerId]}))} className="w-full py-3 flex items-center justify-center space-x-2 text-lg font-bold rounded-xl transition-colors hover:bg-gray-100" style={{ color: clientTheme.hex, backgroundColor: clientTheme.light }}>
+                        <Icons.History /> <span>{isExpanded ? '隱藏紀錄' : `展開完整紀錄 (${client.visitCount} 次)`}</span>
+                      </button>
+                      {isExpanded && (
+                        <div className="mt-4 space-y-3 animate-in slide-in-from-top-2 max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
+                          {client.visits.map((v, vIdx) => (
+                            <div key={vIdx} className="bg-white border-2 p-3 rounded-2xl shadow-sm relative group/record" style={{ borderColor: clientTheme.light }}>
+                              <div className="flex justify-between font-black text-lg text-[#4A2511] mb-1 pr-12">
+                                <div className="flex items-center gap-2"><span>{formatShortDate(v.date)}</span></div>
+                                <span style={{ color: clientTheme.hex }}>${parsePriceRobust(v.price).toLocaleString()}</span>
+                              </div>
+                              <p className="text-gray-600 font-bold text-sm mb-1">{v.services}</p>
+                              {v.formula && <p className="font-mono text-xs text-gray-700 bg-gray-50 p-2 rounded-lg border border-gray-100 break-words whitespace-pre-wrap">{v.formula}</p>}
+                              <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover/record:opacity-100 transition-opacity">
+                                 <button onClick={() => setEditModal({...v, firstName: client.fullName, customerId: client.customerId})} className="p-1.5 bg-gray-100 hover:text-blue-600 text-gray-500 rounded-lg"><Icons.Edit /></button>
+                                 <button onClick={() => setDeleteConfirm({ serviceId: v.serviceId, date: v.date, fullName: client.fullName })} className="p-1.5 bg-gray-100 hover:text-red-600 text-gray-500 rounded-lg"><Icons.Trash /></button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )})}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ==========================================
+            TAB 3: DASHBOARD
+            ========================================== */}
+        {activeTab === 'dashboard' && (
+          <div className="max-w-[1500px] mx-auto space-y-8 animate-in fade-in duration-300 pb-10">
+            <div className="bg-white border border-[#E8DCC8] rounded-3xl p-8 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+               <h2 className="text-4xl font-black flex items-center space-x-4 text-[#4A2511]">
+                  <div className="w-3 h-12 rounded-full" style={{ backgroundColor: activeTheme.hex }}></div>
+                  <span>營業數據儀表板</span>
+               </h2>
+               <div className="flex items-center gap-3 flex-wrap">
+                   <div className="flex bg-[#F6EFE9] rounded-2xl p-1.5 h-[64px] border border-[#E8DCC8]">
+                     <button onClick={() => handlePeriodChange(-1)} className="px-4 text-gray-400 hover:text-[#4A2511] transition-colors"><Icons.ChevronLeft /></button>
+                     {['day', 'week', 'month', 'year'].map(p => (
+                       <button key={p} onClick={() => { playAudioFeedback('click'); setDashboardPeriod(p); setDashboardDateRef(new Date()); setDashboardStartDate(''); setDashboardEndDate(''); }}
+                         className={`px-6 rounded-xl text-xl font-bold capitalize transition-all ${dashboardPeriod === p ? 'text-white shadow-md' : 'text-gray-500 hover:bg-white/50'}`}
+                         style={dashboardPeriod === p ? { backgroundColor: activeTheme.hex } : {}}>
+                         {p === 'day' ? '今日' : p === 'week' ? '本週' : p === 'month' ? '本月' : '全年'}
+                       </button>
+                     ))}
+                     <button onClick={() => handlePeriodChange(1)} className="px-4 text-gray-400 hover:text-[#4A2511] transition-colors"><Icons.ChevronRight /></button>
+                   </div>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+               <div className="border border-[#4A2511] rounded-3xl p-6 shadow-lg" style={{ backgroundColor: '#4A2511' }}><h3 className="text-sm font-bold text-[#E8DCC8] mb-2">總營業額</h3><p className="text-4xl font-black text-white">${dashboardData.rev.toLocaleString()}</p></div>
+               <div className="bg-white border border-[#E8DCC8] rounded-3xl p-6 shadow-sm"><h3 className="text-sm font-bold text-gray-400 mb-2">服務客數</h3><p className="text-4xl font-black text-[#4A2511]">{dashboardData.clients} <span className="text-xl text-gray-300">位</span></p></div>
+               <div className="bg-white border border-[#E8DCC8] rounded-3xl p-6 shadow-sm"><h3 className="text-sm font-bold text-gray-400 mb-2">平均客單價</h3><p className="text-4xl font-black text-[#4A2511]">${dashboardData.avgSpending.toLocaleString()}</p></div>
+               <div className="bg-white border border-[#E8DCC8] rounded-3xl p-6 shadow-sm"><h3 className="text-sm font-bold text-gray-400 mb-2">新客數</h3><p className="text-4xl font-black text-[#4A2511]">{dashboardData.newCus} <span className="text-xl text-gray-300">位</span></p></div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-8 bg-white border border-[#E8DCC8] rounded-3xl p-6 shadow-sm">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-[#4A2511] mb-4">客群佔比分析</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <MeterChart title="新舊客佔比" data={[{name: '舊客', value: dashboardData.retCusPct}, {name: '新客', value: dashboardData.newCusPct}]} colors={['#10b981', '#f59e0b']} />
+                        <MeterChart title="男女比例" data={[{name: '女', value: dashboardData.femalePct}, {name: '男', value: dashboardData.malePct}]} colors={['#ec4899', '#3b82f6']} />
+                        <MeterChart title="語言佔比" data={[{name: 'CN', value: dashboardData.cnPct}, {name: 'ZH', value: dashboardData.zhPct}, {name: 'EN', value: dashboardData.enPct}]} colors={['#8B5A2B', '#C4A485', '#9ca3af']} />
+                    </div>
+                </div>
+                <div className="lg:col-span-4 bg-white border border-[#E8DCC8] rounded-3xl p-6 shadow-sm h-full flex flex-col">
+                 <h3 className="text-xl font-black mb-6 text-[#4A2511]">新客來源分布</h3>
+                 {dashboardData.sourceChart.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie data={dashboardData.sourceChart} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
+                                {dashboardData.sourceChart.map((entry, index) => <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}
+                            </Pie>
+                            <Tooltip contentStyle={{borderRadius: '12px', fontWeight: 'bold'}}/>
+                            <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{fontWeight: 'bold', fontSize: '13px'}}/>
+                        </PieChart>
+                    </ResponsiveContainer>
+                 ) : <div className="flex-1 flex items-center justify-center text-xl font-bold text-gray-300">無資料</div>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[400px]">
+              <div className="lg:col-span-12 bg-white border border-[#E8DCC8] rounded-3xl p-6 shadow-sm flex flex-col">
+                <h3 className="text-xl font-black mb-6 text-[#4A2511]">設計師業績與客數</h3>
+                {dashboardData.stylistChart.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={dashboardData.stylistChart} layout="vertical" margin={{ top: 0, right: 100, left: 0, bottom: 0 }}>
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#4A2511', fontSize: 13, fontWeight: 'bold' }} width={80}/>
+                      <Tooltip cursor={{fill: 'transparent'}} formatter={(value, name) => name === 'revenue' ? `$${value.toLocaleString()}` : `${value} 人`} />
+                      <Bar dataKey="revenue" radius={[0, 8, 8, 0]} barSize={32}>
+                        <LabelList dataKey="revenue" content={(props) => {
+                           const { x, y, width, height, value, index } = props;
+                           if (x == null || y == null || width == null || height == null) return null;
+                           const sty = dashboardData.stylistChart[index];
+                           const cnt = sty ? sty.count : 0;
+                           return <text x={x + width + 12} y={y + height / 2 + 1} fill="#4A2511" fontSize={13} fontWeight="bold" dominantBaseline="central">${Number(value || 0).toLocaleString()} / {cnt} 人</text>;
+                        }} />
+                        {dashboardData.stylistChart.map((entry, index) => <Cell key={`cell-${index}`} fill={STYLIST_THEMES[entry.name]?.hex || '#595959'} />)}
+                      </Bar>
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                ) : <div className="flex-1 flex items-center justify-center text-xl font-bold text-gray-300">此區間尚無數據</div>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ==========================================
+            TAB 4: DATA HUB
+            ========================================== */}
+        {activeTab === 'datahub' && !dataHubUnlocked && (
+           <div className="flex flex-col items-center justify-center pt-20 animate-in zoom-in-95">
+               <div className="bg-white border p-10 rounded-3xl shadow-xl max-w-sm w-full text-center">
+                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-400"><Icons.Lock /></div>
+                   <h3 className="text-2xl font-black mb-2 text-[#4A2511]">安全鎖定</h3>
+                   <p className="text-sm font-bold text-gray-500 mb-6">請輸入店長密碼以進入資料中心</p>
+                   <input type="password" placeholder="••••" value={authPassword} onChange={e=>setAuthPassword(e.target.value)} onKeyDown={e=>{if(e.key==='Enter' && authPassword==='8888'){playAudioFeedback('success');setDataHubUnlocked(true);setAuthPassword('');}}} className="w-full bg-gray-50 border rounded-xl py-3 px-4 text-center text-2xl tracking-widest outline-none focus:border-[#8B5A2B] mb-4" />
+                   <button onClick={()=>{if(authPassword==='8888'){setDataHubUnlocked(true);setAuthPassword('');}}} className="w-full bg-[#8B5A2B] text-white font-bold py-3 rounded-xl">解鎖</button>
+               </div>
+           </div>
+        )}
+
+        {activeTab === 'datahub' && dataHubUnlocked && (
+          <div className="max-w-[1500px] mx-auto space-y-6 animate-in fade-in duration-300 pb-10">
+            <div className="bg-white border border-[#E8DCC8] rounded-3xl p-6 shadow-sm flex items-center justify-between gap-4">
+               <h2 className="text-3xl font-black text-[#4A2511]">系統資料中心 (Data Hub)</h2>
+               <button onClick={()=>setDataHubUnlocked(false)} className="text-gray-400 hover:bg-gray-100 p-2 rounded-xl flex items-center gap-1 font-bold text-sm"><Icons.Lock/> 重新上鎖</button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white border border-[#E8DCC8] rounded-3xl p-8 shadow-sm">
+                  <h3 className="text-2xl font-black text-[#4A2511] mb-6 border-b border-gray-100 pb-4">API 串接設定</h3>
+                  <div className="space-y-4 mb-6">
+                      <div><label className="block text-sm font-bold text-gray-600 mb-1">CRM API (Google Sheet)</label><input type="text" value={driveApiUrl} onChange={(e) => setDriveApiUrl(e.target.value)} className="w-full bg-blue-50 border-blue-200 border rounded-xl py-3 px-4 text-sm font-mono outline-none text-blue-900" /></div>
+                      <div><label className="block text-sm font-bold text-gray-600 mb-1">排程 API (Google Calendar)</label><input type="text" value={calendarApiUrl} onChange={(e) => setCalendarApiUrl(e.target.value)} className="w-full bg-yellow-50 border-yellow-200 border rounded-xl py-3 px-4 text-sm font-mono outline-none text-yellow-900" /></div>
+                  </div>
+                </div>
+
+                <div className="bg-[#4A2511] text-white rounded-3xl p-8 shadow-xl">
+                    <h3 className="text-xl font-black mb-4 border-b border-[#6D3A14] pb-3 text-amber-100">資料安全操作指南</h3>
+                    <ul className="space-y-4 text-sm font-bold opacity-90 leading-relaxed">
+                        <li><span className="text-amber-400">1.</span> <b>日常結帳：</b>直接在 Checkout 頁面結帳，系統會自動背景寫入雲端。</li>
+                        <li><span className="text-amber-400">2.</span> <b>修改與刪除：</b>修改客歷卡或交易紀錄時，系統已自動為您背景同步！</li>
+                    </ul>
+                </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* SUCCESS MODAL */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-[#4A2511]/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-[3rem] max-w-lg w-full p-12 text-center shadow-2xl animate-in zoom-in-95 duration-300">
+            <h3 className="text-4xl font-black mb-2 text-[#4A2511]">結帳成功！</h3>
+            <button onClick={() => { playAudioFeedback('click'); setShowSuccessModal(false); }} className="mt-8 w-full text-white font-black py-5 rounded-2xl text-2xl transition-all shadow-lg" style={{ backgroundColor: activeTheme.hex }}>完成 (Done)</button>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT MODAL WITH BACKGROUND SYNC */}
+      {editModal && (
+        <div className="fixed inset-0 bg-[#4A2511]/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const updatedRecord = { ...editModal };
+            setRawHistoryRecords(prev => {
+                const newRecords = prev.map(r => r.serviceId === updatedRecord.serviceId ? { ...r, ...updatedRecord } : r);
+                if (driveApiUrl) { fetch(getApiUrl(driveApiUrl, 'sync_all'), { method: 'POST', body: JSON.stringify({ action: 'sync_all', records: newRecords }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(()=>{}); }
+                return newRecords;
+            });
+            triggerNotification(`✅ 已更新紀錄並同步至雲端！`); setEditModal(null);
+          }} className="bg-white rounded-[2rem] max-w-2xl w-full p-8 shadow-2xl flex flex-col">
+            <h3 className="text-3xl font-black mb-6 text-[#4A2511]">編輯服務紀錄</h3>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div><label className="block text-xs font-bold mb-1">日期</label><input type="date" value={formatShortDate(editModal.date)} onChange={e=>setEditModal({...editModal, date: e.target.value})} className="w-full bg-[#F6EFE9] rounded-xl py-2 px-3 font-bold" /></div>
+              <div><label className="block text-xs font-bold mb-1">金額</label><input type="number" value={editModal.price} onChange={e=>setEditModal({...editModal, price: e.target.value})} className="w-full bg-[#F6EFE9] rounded-xl py-2 px-3 font-bold" /></div>
+              <div className="col-span-2"><label className="block text-xs font-bold mb-1">服務</label><input type="text" value={editModal.services||''} onChange={e=>setEditModal({...editModal, services: e.target.value})} className="w-full bg-[#F6EFE9] rounded-xl py-2 px-3 font-bold" /></div>
+            </div>
+            <div className="flex space-x-4 mt-4">
+               <button type="button" onClick={() => setEditModal(null)} className="flex-1 py-3 rounded-xl font-bold bg-gray-100">取消</button>
+               <button type="submit" className="flex-1 py-3 rounded-xl font-bold text-white bg-[#8B5A2B]">儲存更新</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* PROFILE EDIT MODAL WITH BACKGROUND SYNC AND NAME FIX */}
+      {profileEditData && (
+        <div className="fixed inset-0 bg-[#4A2511]/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const newFullName = e.target.fullName.value.trim();
+            setRawHistoryRecords(prev => {
+                const newRecords = prev.map(r => r.customerId === profileEditData.customerId ? { 
+                    ...r, firstName: newFullName, lastName: '', name: newFullName, 
+                    gender: e.target.gender.value, language: e.target.language.value, phone: e.target.phone.value 
+                } : r);
+                if (driveApiUrl) { fetch(getApiUrl(driveApiUrl, 'sync_all'), { method: 'POST', body: JSON.stringify({ action: 'sync_all', records: newRecords }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(()=>{}); }
+                return newRecords;
+            });
+            triggerNotification(`✅ 已更新檔案並同步至雲端！`); setProfileEditData(null);
+          }} className="bg-white rounded-[2rem] max-w-lg w-full p-8 shadow-2xl flex flex-col">
+            <h3 className="text-3xl font-black mb-6 text-[#4A2511]">編輯客戶基本資料</h3>
+            <div className="space-y-4 mb-6">
+              <div><label className="block text-xs font-bold mb-1">姓名 (Full Name)</label><input type="text" name="fullName" defaultValue={profileEditData.fullName} required className="w-full bg-[#F6EFE9] rounded-xl py-3 px-4 font-bold border" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="block text-xs font-bold mb-1">電話</label><input type="text" name="phone" defaultValue={profileEditData.phone} className="w-full bg-[#F6EFE9] rounded-xl py-3 px-4 font-bold" /></div>
+                <div><label className="block text-xs font-bold mb-1">性別</label><select name="gender" defaultValue={profileEditData.gender} className="w-full bg-[#F6EFE9] rounded-xl py-3 px-3 font-bold"><option value="Female">女</option><option value="Male">男</option></select></div>
+              </div>
+            </div>
+            <div className="flex space-x-4 mt-auto">
+               <button type="button" onClick={() => setProfileEditData(null)} className="flex-1 py-4 rounded-xl font-bold bg-gray-100">取消</button>
+               <button type="submit" className="flex-1 py-4 rounded-xl font-bold text-white bg-[#8B5A2B]">儲存更新</button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
