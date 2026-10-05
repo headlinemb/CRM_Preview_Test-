@@ -39,11 +39,11 @@ const paymentMethods = [ { id: 'Cash', label: 'Cash', icon: Icons.Banknote }, { 
 const SERVICE_DURATIONS = { '剪髮 (Cut)': 60, '洗吹 (Wash & Blow)': 30, '電髮 (Perm)': 150, '全頭染髮 (Color)': 120, '髮根補染 (Root Touch)': 60, '漂髮 (Bleach)': 180, '挑染 (Highlights)': 180, '角蛋白護理 (Keratin)': 120, '頭皮理療 (Treatment)': 60 };
 const defaultServices = Object.keys(SERVICE_DURATIONS);
 const birthMonthsList = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月','不提供'];
-const TIME_SLOTS = Array.from({length: 21}, (_, i) => `Math.floor(i/2)+10:{i % 2 === 0 ? '00' : '30'}`);
+const TIME_SLOTS = Array.from({length: 21}, (_, i) => `${Math.floor(i / 2) + 10}:${i % 2 === 0 ? '00' : '30'}`);
 
 // HKT Time Helpers
 const getHKTNow = () => new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Hong_Kong" }));
-const getHKTDateString = () => { const d = getHKTNow(); return `d.getFullYear()-{String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const getHKTDateString = () => { const d = getHKTNow(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
 let audioCtx = null;
 const playAudioFeedback = (type) => {
@@ -183,7 +183,7 @@ export default function App() {
   const [rawHistoryRecords, setRawHistoryRecords] = useState(() => { 
     try { 
       const parsed = JSON.parse(localStorage.getItem('headline_salon_history_v11') || '[]'); 
-      return Array.isArray(parsed) ? parsed.map((r, i) => ({ ...r, serviceId: r.serviceId || `S-OLD-Date.now()-{i}` })) : []; 
+      return Array.isArray(parsed) ? parsed.map((r, i) => ({ ...r, serviceId: r.serviceId || `S-OLD-${Date.now()}-${i}` })) : []; 
     } catch(e) { return []; } 
   });
   
@@ -202,7 +202,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('headline_calendar_api_v13_9', calendarApiUrl); }, [calendarApiUrl]);
   useEffect(() => { localStorage.setItem('headline_salon_history_v11', JSON.stringify(rawHistoryRecords)); }, [rawHistoryRecords]);
 
-  const getApiUrl = (baseUrl, action) => { if (!baseUrl) return ''; try { const url = new URL(baseUrl); url.searchParams.set('action', action); return url.toString(); } catch (e) { return `baseUrl?action={action}`; } };
+  const getApiUrl = (baseUrl, action) => { if (!baseUrl) return ''; try { const url = new URL(baseUrl); url.searchParams.set('action', action); return url.toString(); } catch (e) { return `${baseUrl}?action=${action}`; } };
 
   const updateRecordsAndSync = (updater) => {
       setRawHistoryRecords(prev => {
@@ -253,9 +253,9 @@ export default function App() {
     const yy = String(d.getFullYear()).slice(-2);
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const dd = String(d.getDate()).padStart(2, '0');
-    const prefix = `S-yy{mm}${dd}-`;
+    const prefix = `S-${yy}${mm}${dd}-`;
     const todaysRecords = records.filter(r => r.serviceId && r.serviceId.startsWith(prefix));
-    return `prefix{String(todaysRecords.length + 1).padStart(2, '0')}`;
+    return `${prefix}${String(todaysRecords.length + 1).padStart(2, '0')}`;
   };
 
   const getNextCustomerId = (records) => {
@@ -384,7 +384,7 @@ export default function App() {
         if (p === 'week') { d.setDate(d.getDate() + (off * 7)); const diff = d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1); const start = new Date(d.setDate(diff)); start.setHours(0,0,0,0); const end = new Date(start); end.setDate(end.getDate() + 6); end.setHours(23,59,59,999); return { start, end }; }
         if (p === 'month') { d.setMonth(d.getMonth() + off); return { start: new Date(d.getFullYear(), d.getMonth(), 1), end: new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999) }; }
         if (p === 'year') { d.setFullYear(d.getFullYear() + off); return { start: new Date(d.getFullYear(), 0, 1), end: new Date(d.getFullYear(), 11, 31, 23, 59, 59, 999) }; }
-        return { start: new Date(`dashboardStartDateT00:00:00`),end:newDate(`{dashboardEndDate}T23:59:59`) };
+        return { start: new Date(`${dashboardStartDate}T00:00:00`), end: new Date(`${dashboardEndDate}T23:59:59`) };
     };
 
     const currentRange = getPeriodRange(dashboardPeriod, dashboardDateRef, 0);
@@ -419,7 +419,7 @@ export default function App() {
             if (r.language === 'EN') m.en++; else m.zh++; 
             if (r.customerSource?.includes('新客')) {
                 m.newCus++;
-                let src = r.customerSource.includes('Referral') ? '朋友介紹' : (r.customerSource.includes('IG') || r.customerSource.includes('FB') ? 'IG/FB' : (r.customerSource.includes('Google') ? 'Google' : (r.customerSource.includes('旅客') || r.customerSource.includes('Tourist') ? '旅客' : 'Walk-in')));
+                let src = r.customerSource.includes('Referral') ? '朋友介紹' : (r.customerSource.includes('IG') || r.customerSource.includes('FB') ? 'IG/FB' : (r.customerSource.includes('旅客') || r.customerSource.includes('Tourist') ? '旅客' : 'Walk-in'));
                 sourceMap[src] = (sourceMap[src] || 0) + 1;
             }
             const sty = ['Man', 'Becky', 'Sammy'].includes(cleanStylistName(r.stylist)) ? cleanStylistName(r.stylist) : 'Others';
@@ -427,16 +427,12 @@ export default function App() {
 
             const recDate = new Date(parseDateFlexible(r.date));
             if (!isNaN(recDate.getTime())) {
-                const dateKey = `recDate.getMonth()+1/{recDate.getDate()}`;
+                const dateKey = `${recDate.getMonth()+1}/${recDate.getDate()}`;
                 if (!dailyMap[dateKey]) dailyMap[dateKey] = { time: dateKey, count: 0, revenue: 0, isSunday: recDate.getDay()===0, rawDate: recDate.getTime() };
                 dailyMap[dateKey].count += 1; dailyMap[dateKey].revenue += r.price;
             }
 
             (r.services || '').split(',').map(s=>s.trim()).filter(s => s && s!=='系統匯入' && s!=='建立檔案').forEach(s => {
-                const cleanSvcName = s.replace(/\s*\(\$\d+\)/, '').trim();
-                if(!serviceMap[cleanSvcName]) serviceMap[cleanSvcName] = { name: cleanSvcName, Man: 0, Becky: 0, Sammy: 0, Others: 0, total: 0 };
-                serviceMap[cleanSvcName][sty] += 1; serviceMap[cleanSvcName].total += 1;
-            });
                 if(!serviceMap[s]) serviceMap[s] = { name: s, Man: 0, Becky: 0, Sammy: 0, Others: 0, total: 0 };
                 serviceMap[s][sty] += 1; serviceMap[s].total += 1;
             });
@@ -475,7 +471,7 @@ const trafficChartData = useMemo(() => {
 
         const recDate = new Date(parseDateFlexible(r.date));
         if (!isNaN(recDate.getTime())) {
-            const dateKey = `recDate.getMonth()+1/{recDate.getDate()}`;
+            const dateKey = `${recDate.getMonth()+1}/${recDate.getDate()}`;
             if (!dailyMap[dateKey]) dailyMap[dateKey] = { time: dateKey, count: 0, isSunday: recDate.getDay()===0, rawDate: recDate.getTime() };
             dailyMap[dateKey].count += 1;
         }
@@ -626,7 +622,7 @@ const trafficChartData = useMemo(() => {
     const currentServiceId = formData.serviceId || generateServiceId(formData.date, safeRawRecords);
     
     const formattedSelectedServices = formData.selectedServices.map(s => s.name);
-    const formattedCustomService = formData.customServicePrice ? `formData.customService(${formData.customServicePrice})` : formData.customService;
+    const formattedCustomService = formData.customServicePrice ? `${formData.customService} ($${formData.customServicePrice})` : formData.customService;
     
     const finalRecord = { ...formData, firstName: formData.firstName.trim(), lastName: '', name: formData.firstName.trim(), customerId: finalCustomerId, serviceId: currentServiceId, customerSource: formData.clientType === 'New' ? `新客 (${formData.sourceDetail})` : (formData.clientType === 'Repeated' && !formData.customerId ? '舊客 (數位首建)' : '舊客 (Repeated)'), services: [...formattedSelectedServices, formattedCustomService].filter(Boolean).join(', '), interests: formData.interests.join(', '), isProfileOnly: false, timestamp: getHKTNow().toISOString() };
 
@@ -695,7 +691,7 @@ const trafficChartData = useMemo(() => {
         <div className="flex items-center space-x-4 md:space-x-8 w-full justify-between">
           <div className="flex flex-col items-start justify-center select-none pt-1">
             <h1 className="text-2xl md:text-3xl font-bold tracking-[0.2em] leading-none text-[#4A2511] flex items-center">
-              HEADLINE <span className="text-[10px] md:text-xs font-bold text-emerald-600 tracking-normal ml-2 md:ml-3 mt-1 bg-emerald-50 px-1.5 md:px-2 py-0.5 rounded border border-emerald-200">v14.12 Mobile</span>
+              HEADLINE <span className="text-[10px] md:text-xs font-bold text-emerald-600 tracking-normal ml-2 md:ml-3 mt-1 bg-emerald-50 px-1.5 md:px-2 py-0.5 rounded border border-emerald-200">v14.11 Mobile</span>
             </h1>
             <span className="text-[10px] md:text-xs tracking-[0.4em] uppercase mt-1 font-semibold text-gray-500">Hair Salon</span>
           </div>
@@ -765,9 +761,9 @@ const trafficChartData = useMemo(() => {
                                         const topPx = ((hour - 10) * 128) + (min / 60) * 128; let durationMins = Math.round((new Date(evt.endTime) - new Date(evt.startTime)) / 60000); if (!durationMins || durationMins <= 0) durationMins = 60; const heightPx = Math.max((durationMins / 60) * 128 - 4, 40); 
                                         const parts = evt.title.split('|'); let clientName = parts[0]?.trim() || evt.title, service = parts[1]?.trim() || '', phone = '', notes = evt.description || '';
                                         if (notes.includes('Phone:')) { const splitNotes = notes.split('\n'); phone = splitNotes[0].replace('Phone:', '').trim(); notes = splitNotes.slice(1).join('\n'); }
-                                        const parsedApt = { id: evt.id, stylist, clientName, service, time: `hour:{min.toString().padStart(2,'0')}`, duration: durationMins, date: dateStr, phone, notes };
+                                        const parsedApt = { id: evt.id, stylist, clientName, service, time: `${hour}:${min.toString().padStart(2,'0')}`, duration: durationMins, date: dateStr, phone, notes };
                                         return (
-                                           <div key={i} onClick={() => { playAudioFeedback('click'); setSchedDetailModal(parsedApt); }} className="absolute left-1 right-1 rounded-xl p-2 md:p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden border-2 z-10 flex flex-col" style={{ top: `topPx+66px`,height:`{heightPx}px`, backgroundColor: STYLIST_THEMES[stylist].light, borderColor: STYLIST_THEMES[stylist].hex, borderLeftWidth: '6px' }}>
+                                           <div key={i} onClick={() => { playAudioFeedback('click'); setSchedDetailModal(parsedApt); }} className="absolute left-1 right-1 rounded-xl p-2 md:p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer overflow-hidden border-2 z-10 flex flex-col" style={{ top: `${topPx + 66}px`, height: `${heightPx}px`, backgroundColor: STYLIST_THEMES[stylist].light, borderColor: STYLIST_THEMES[stylist].hex, borderLeftWidth: '6px' }}>
                                                <div className="flex justify-between items-start mb-1 shrink-0"><span className="font-black text-[#4A2511] text-sm md:text-base leading-tight truncate">{clientName}</span><span className="text-[10px] md:text-xs font-bold text-[#8B5A2B] bg-white/80 px-1 md:px-2 py-0.5 rounded shadow-sm">{parsedApt.time}</span></div>
                                                <div className="text-[10px] md:text-xs font-bold text-gray-700 truncate mb-1 shrink-0">{service}</div>
                                                {heightPx > 60 && phone && <div className="text-[9px] md:text-[10px] text-gray-500 font-mono hidden md:block shrink-0">📞 {phone}</div>}
@@ -826,7 +822,7 @@ const trafficChartData = useMemo(() => {
                                <div className="grid grid-cols-7 border-b border-[#E8DCC8] bg-[#F6EFE9]">{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d} className="p-2 md:p-3 text-center font-bold text-gray-500 text-[10px] md:text-sm uppercase">{d}</div>)}</div>
                                <div className="flex-1 grid grid-cols-7 grid-rows-5 bg-white">
                                    {weeks.map((week, wIdx) => week.map((day, dIdx) => {
-                                       if (!day) return <div key={`empty-wIdx-{dIdx}`} className="border-b border-r border-gray-100 bg-gray-50/50 p-1 md:p-2"></div>;
+                                       if (!day) return <div key={`empty-${wIdx}-${dIdx}`} className="border-b border-r border-gray-100 bg-gray-50/50 p-1 md:p-2"></div>;
                                        const dateStr = day.toLocaleDateString('en-CA'), isToday = dateStr === new Date().toLocaleDateString('en-CA'); const dayEvents = calendarEvents.filter(e => { const eD = new Date(e.startTime); return !isNaN(eD.getTime()) && eD.toLocaleDateString('en-CA') === dateStr && visibleStylists.includes(cleanStylistName(e.stylist)); });
                                        return (
                                            <div key={dateStr} className={`border-b border-r border-gray-100 p-1 md:p-2 overflow-hidden flex flex-col ${isToday ? 'bg-[#F6EFE9]/30' : ''}`}>
@@ -1534,7 +1530,7 @@ const trafficChartData = useMemo(() => {
 
                          return (
                              <div key={i} onClick={() => { setActiveTab('crm'); setCrmSearchQuery(r.customerId); setExpandedHistory(prev => ({...prev, [r.customerId]: true})); }} className="grid grid-cols-12 gap-2 md:gap-4 px-4 md:px-6 py-3 md:py-5 border-b border-gray-100 items-center hover:bg-gray-50 cursor-pointer transition-colors group">
-                                 <div className="col-span-2 flex flex-col"><span className="font-black text-[#4A2511] text-sm md:text-base">{parseDateFlexible(r.date)}</span><span className="text-[9px] md:text-xs font-bold text-gray-400 font-mono mt-0.5">{isDateValid && r.timestamp ? `建立: String(dateObj.getMonth()+1).padStart(2,'0')/{String(dateObj.getDate()).padStart(2,'0')} String(dateObj.getHours()).padStart(2,'0'):{String(dateObj.getMinutes()).padStart(2,'0')}` : ''}</span></div>
+                                 <div className="col-span-2 flex flex-col"><span className="font-black text-[#4A2511] text-sm md:text-base">{parseDateFlexible(r.date)}</span><span className="text-[9px] md:text-xs font-bold text-gray-400 font-mono mt-0.5">{isDateValid && r.timestamp ? `建立: ${String(dateObj.getMonth()+1).padStart(2,'0')}/${String(dateObj.getDate()).padStart(2,'0')} ${String(dateObj.getHours()).padStart(2,'0')}:${String(dateObj.getMinutes()).padStart(2,'0')}` : ''}</span></div>
                                  <div className="col-span-2 font-mono text-gray-400 font-bold text-[10px] md:text-sm tracking-wide">{r.serviceId}</div>
                                  <div className="col-span-2 flex items-center gap-1.5 md:gap-2 font-black text-[#8B5A2B] text-base md:text-lg">
                                     <span className={`text-[9px] md:text-[11px] font-bold w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full border ${genderColor} shrink-0`}>{genderText}</span>
@@ -1891,4 +1887,3 @@ const trafficChartData = useMemo(() => {
     </div>
   );
 }
-
