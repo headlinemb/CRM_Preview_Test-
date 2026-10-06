@@ -1,245 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Headline CRM Preview</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Headline CRM - Preview</title>
     <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-  <body style="margin:0; padding:0; background:#f6efe9;">
-    <div id="root" style="width:100%; height:100vh; display:flex; align-items:center; justify-content:center; color:#4a2511; font-weight:700; letter-spacing:0.08em; font-size:24px;">
-      Loading preview...
-    </div>
+</head>
+<body style="margin: 0; padding: 0; background: #f6efe9;">
+    <div id="root"></div>
 
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
 
     <script>
-      const { useState, useEffect, useMemo, useRef } = React;
-      const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid, Legend, ComposedChart, LabelList } = window.Recharts;
-      
-      const Icons = {
-        Check: ({ className = "w-5 h-5" }) => React.createElement('svg', { className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2.5, d: "M5 13l4 4L19 7" })),
-        User: () => React.createElement('svg', { className: "w-5 h-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" })),
-        X: ({ className = "w-5 h-5" }) => React.createElement('svg', { className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" })),
-        Gift: () => React.createElement('svg', { className: "w-5 h-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0H9a2 2 0 00-2 2v11a2 2 0 002 2h6a2 2 0 002-2v-11a2 2 0 00-2-2h-3zm0 0V6a2 2 0 112 2h-2z" })),
-        Refresh: ({ className = "w-5 h-5" }) => React.createElement('svg', { className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" })),
-        Calendar: () => React.createElement('svg', { className: "w-5 h-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" })),
-      };
+        const { useState } = React;
 
-      const STYLIST_THEMES = {
-        'Man': { hex: '#6D3A14', light: '#6D3A1415', shadow: 'rgba(109, 58, 20, 0.3)' },
-        'Becky': { hex: '#9F3E3E', light: '#9F3E3E15', shadow: 'rgba(159, 62, 62, 0.3)' },
-        'Sammy': { hex: '#2C496A', light: '#2C496A15', shadow: 'rgba(44, 73, 106, 0.3)' },
-        'Others': { hex: '#595959', light: '#59595915', shadow: 'rgba(89, 89, 89, 0.3)' }
-      };
+        function App() {
+            const [activeTab, setActiveTab] = useState('checkout');
+            const [customerName, setCustomerName] = useState('');
+            const [phone, setPhone] = useState('');
+            const [stylist, setStylist] = useState('Man');
+            const [selectedServices, setSelectedServices] = useState([]);
+            const [total, setTotal] = useState(0);
 
-      const stylists = ['Man', 'Becky', 'Sammy', 'Others'];
-
-      const SERVICE_DURATIONS = {
-        '剪髮 (Cut)': 60,
-        '洗吹 (Wash & Blow)': 30,
-        '電髮 (Perm)': 150,
-        '全頭染髮 (Color)': 120,
-        '髮根補染 (Root Touch)': 60,
-        '漂髮 (Bleach)': 180,
-        '挑染 (Highlight)': 120
-      };
-
-      const MENU_CATEGORIES = [
-        {
-          title: '剪髮與洗護 (Cut & Wash)',
-          icon: '✂️',
-          items: [
-            { name: 'Hair Cut & Shampoo (洗剪)', price: 350 },
-            { name: 'Shampoo & Blow (洗吹)', price: 180 },
-            { name: 'Hair Cut Only (單剪)', price: 300 },
-          ]
-        },
-        {
-          title: '電髮 (Perm)',
-          icon: '🌀',
-          items: [
-            { name: 'Full Perm S (全頭電髮 短)', price: 800 },
-            { name: 'Digital Perm M (電直/捲 中)', price: 1300 },
-          ]
-        }
-      ];
-
-      function App() {
-        const [activeTab, setActiveTab] = useState('checkout');
-        const [formData, setFormData] = useState({
-          firstName: '',
-          phone: '',
-          stylist: 'Man',
-          price: '',
-          date: new Date().toISOString().split('T')[0],
-          selectedServices: [],
-        });
-
-        const activeTheme = STYLIST_THEMES[formData.stylist] || STYLIST_THEMES['Man'];
-
-        const handleInputChange = (field, value) => {
-          setFormData(prev => ({ ...prev, [field]: value }));
-        };
-
-        const triggerNotification = (msg) => {
-          alert(msg);
-        };
-
-        const handleToggleService = (serviceObj) => {
-          setFormData(prev => {
-            const isSelected = prev.selectedServices.some(s => s.name === serviceObj.name);
-            let newSelected = [];
-            let subtotalModifier = serviceObj.price;
-
-            if (isSelected) {
-              newSelected = prev.selectedServices.filter(s => s.name !== serviceObj.name);
-              subtotalModifier = -serviceObj.price;
-            } else {
-              newSelected = [...prev.selectedServices, serviceObj];
-            }
-
-            let currentSubtotal = parseInt(prev.price) || 0;
-            let newSubtotal = Math.max(0, currentSubtotal + subtotalModifier);
-
-            return {
-              ...prev,
-              selectedServices: newSelected,
-              price: newSubtotal > 0 ? String(newSubtotal) : ''
+            const stylists = ['Man', 'Becky', 'Sammy', 'Others'];
+            const themeColors = {
+                'Man': '#6D3A14',
+                'Becky': '#9F3E3E',
+                'Sammy': '#2C496A',
+                'Others': '#595959'
             };
-          });
-        };
 
-        const handleSubmitCheckout = (e) => {
-          e.preventDefault();
-          if (!formData.firstName) return triggerNotification('Please enter customer name!');
-          if (!formData.price || parseInt(formData.price) <= 0) return triggerNotification('Please enter valid amount!');
-          triggerNotification(`✅ Checkout complete! Total: $${formData.price}`);
-          setFormData(prev => ({ ...prev, firstName: '', phone: '', price: '', selectedServices: [] }));
-        };
+            const services = [
+                { name: 'Hair Cut & Shampoo (洗剪)', price: 350 },
+                { name: 'Shampoo & Blow (洗吹)', price: 180 },
+                { name: 'Hair Cut Only (單剪)', price: 300 },
+                { name: 'Full Perm S (全頭電髮 短)', price: 800 },
+                { name: 'Digital Perm M (電直/捲 中)', price: 1300 },
+            ];
 
-        return React.createElement('div', {
-          className: 'h-screen flex flex-col font-sans overflow-hidden bg-[#F6EFE9] text-[#4A2511]',
-          style: { margin: 0 }
-        },
-          React.createElement('header', {
-            className: 'shrink-0 z-40 px-4 md:px-6 py-4 flex justify-between items-center bg-white/90 backdrop-blur-md border-b border-[#E8DCC8] shadow-sm'
-          },
-            React.createElement('div', { className: 'flex flex-col items-start' },
-              React.createElement('h1', { className: 'text-3xl font-bold text-[#4A2511]' }, 'HEADLINE'),
-              React.createElement('span', { className: 'text-xs tracking-widest uppercase font-semibold text-gray-500' }, 'Hair Salon CRM')
-            ),
-            React.createElement('div', { className: 'flex gap-4' },
-              React.createElement('button', {
-                onClick: () => setActiveTab('checkout'),
-                className: `px-5 py-2 rounded-xl font-bold text-lg transition-all ${activeTab === 'checkout' ? 'bg-[#4A2511] text-white' : 'bg-gray-100 text-[#4A2511]'}`
-              },
-                React.createElement(Icons.Gift, { className: 'inline-block mr-2 w-5 h-5' }),
-                'Checkout'
-              ),
-              React.createElement('button', {
-                onClick: () => setActiveTab('scheduler'),
-                className: `px-5 py-2 rounded-xl font-bold text-lg transition-all ${activeTab === 'scheduler' ? 'bg-[#4A2511] text-white' : 'bg-gray-100 text-[#4A2511]'}`
-              },
-                React.createElement(Icons.Calendar, { className: 'inline-block mr-2 w-5 h-5' }),
-                'Schedule'
-              )
-            )
-          ),
-          React.createElement('main', { className: 'flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center' },
-            activeTab === 'checkout' && React.createElement('form', {
-              onSubmit: handleSubmitCheckout,
-              className: 'w-full max-w-2xl bg-white rounded-3xl p-8 shadow-lg border border-[#E8DCC8]'
+            const toggleService = (service) => {
+                const isSelected = selectedServices.some(s => s.name === service.name);
+                let newServices, newTotal;
+
+                if (isSelected) {
+                    newServices = selectedServices.filter(s => s.name !== service.name);
+                    newTotal = total - service.price;
+                } else {
+                    newServices = [...selectedServices, service];
+                    newTotal = total + service.price;
+                }
+
+                setSelectedServices(newServices);
+                setTotal(Math.max(0, newTotal));
+            };
+
+            const handleSubmit = () => {
+                if (!customerName.trim()) {
+                    alert('Please enter customer name!');
+                    return;
+                }
+                if (total <= 0) {
+                    alert('Please select at least one service!');
+                    return;
+                }
+                alert(`✅ Checkout complete!\nCustomer: ${customerName}\nTotal: $${total}`);
+                setCustomerName('');
+                setPhone('');
+                setSelectedServices([]);
+                setTotal(0);
+            };
+
+            return React.createElement('div', {
+                className: 'h-screen flex flex-col bg-[#F6EFE9] text-[#4A2511]'
             },
-              React.createElement('div', { style: { width: '100%', height: '4px', backgroundColor: activeTheme.hex, borderRadius: '8px 8px 0 0', marginBottom: '24px' } }),
-              React.createElement('h2', { className: 'text-2xl font-black mb-6 text-[#4A2511]' }, '現場結帳 Point of Sale'),
-              React.createElement('div', { className: 'mb-6' },
-                React.createElement('label', { className: 'block text-sm font-bold uppercase tracking-wider mb-3 text-gray-500' }, 'Stylist'),
-                React.createElement('div', { className: 'flex gap-2 flex-wrap' },
-                  stylists.map(s =>
-                    React.createElement('button', {
-                      key: s,
-                      type: 'button',
-                      onClick: () => handleInputChange('stylist', s),
-                      className: `px-4 py-2 rounded-xl font-bold transition-all ${formData.stylist === s ? 'text-white' : 'bg-gray-100 text-[#4A2511]'}`,
-                      style: { backgroundColor: formData.stylist === s ? activeTheme.hex : undefined }
-                    }, s)
-                  )
-                )
-              ),
-              React.createElement('div', { className: 'mb-6' },
-                React.createElement('label', { className: 'block text-sm font-bold uppercase tracking-wider mb-2 text-gray-500' }, 'Customer Name'),
-                React.createElement('input', {
-                  type: 'text',
-                  value: formData.firstName,
-                  onChange: (e) => handleInputChange('firstName', e.target.value),
-                  className: 'w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:border-[#4A2511]',
-                  placeholder: 'Enter customer name...'
-                })
-              ),
-              React.createElement('div', { className: 'mb-6' },
-                React.createElement('label', { className: 'block text-sm font-bold uppercase tracking-wider mb-2 text-gray-500' }, 'Phone'),
-                React.createElement('input', {
-                  type: 'tel',
-                  value: formData.phone,
-                  onChange: (e) => handleInputChange('phone', e.target.value),
-                  className: 'w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:border-[#4A2511]',
-                  placeholder: '9XXXXXXXX'
-                })
-              ),
-              React.createElement('div', { className: 'mb-6' },
-                React.createElement('label', { className: 'block text-sm font-bold uppercase tracking-wider mb-3 text-gray-500' }, 'Services'),
-                MENU_CATEGORIES.map(category =>
-                  React.createElement('div', { key: category.title, className: 'mb-4' },
-                    React.createElement('h3', { className: 'font-bold text-gray-700 mb-2' }, category.icon, ' ', category.title),
-                    React.createElement('div', { className: 'flex flex-wrap gap-2' },
-                      category.items.map(item =>
-                        React.createElement('button', {
-                          key: item.name,
-                          type: 'button',
-                          onClick: () => handleToggleService(item),
-                          className: `px-3 py-1 rounded-lg text-sm font-bold transition-all ${formData.selectedServices.some(s => s.name === item.name) ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-[#4A2511]'}`
-                        }, item.name, ' $', item.price)
-                      )
+                // Header
+                React.createElement('header', {
+                    className: 'bg-white shadow-sm border-b border-[#E8DCC8] px-6 py-4'
+                },
+                    React.createElement('div', { className: 'flex justify-between items-center' },
+                        React.createElement('div', {},
+                            React.createElement('h1', { className: 'text-3xl font-bold' }, 'HEADLINE'),
+                            React.createElement('p', { className: 'text-xs text-gray-500 tracking-widest' }, 'Hair Salon CRM')
+                        ),
+                        React.createElement('div', { className: 'flex gap-2' },
+                            React.createElement('button', {
+                                onClick: () => setActiveTab('checkout'),
+                                className: `px-6 py-2 rounded-xl font-bold transition-all ${activeTab === 'checkout' ? 'text-white' : 'bg-gray-100 text-[#4A2511]'}`,
+                                style: activeTab === 'checkout' ? { backgroundColor: themeColors[stylist] } : {}
+                            }, '💳 Checkout'),
+                            React.createElement('button', {
+                                onClick: () => setActiveTab('schedule'),
+                                className: `px-6 py-2 rounded-xl font-bold transition-all ${activeTab === 'schedule' ? 'text-white' : 'bg-gray-100 text-[#4A2511]'}`,
+                                style: activeTab === 'schedule' ? { backgroundColor: themeColors[stylist] } : {}
+                            }, '📅 Schedule')
+                        )
                     )
-                  )
-                )
-              ),
-              React.createElement('div', { className: 'mb-6' },
-                React.createElement('label', { className: 'block text-sm font-bold uppercase tracking-wider mb-2 text-gray-500' }, 'Service Date'),
-                React.createElement('input', {
-                  type: 'date',
-                  value: formData.date,
-                  onChange: (e) => handleInputChange('date', e.target.value),
-                  className: 'w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:border-[#4A2511]'
-                })
-              ),
-              React.createElement('div', { className: 'mb-6 p-4 bg-[#F6EFE9] rounded-2xl border border-[#E8DCC8]' },
-                React.createElement('div', { className: 'flex justify-between items-center' },
-                  React.createElement('span', { className: 'text-lg font-bold' }, 'Total:'),
-                  React.createElement('span', { className: 'text-2xl font-black', style: { color: activeTheme.hex } }, '$', formData.price || '0')
-                )
-              ),
-              React.createElement('button', {
-                type: 'submit',
-                className: 'w-full py-4 rounded-2xl text-white font-black text-lg transition-all hover:opacity-90',
-                style: { backgroundColor: activeTheme.hex }
-              }, '✅ Complete Checkout')
-            ),
-            activeTab === 'scheduler' && React.createElement('div', {
-              className: 'w-full max-w-4xl bg-white rounded-3xl p-8 shadow-lg border border-[#E8DCC8]'
-            },
-              React.createElement('h2', { className: 'text-2xl font-black mb-6 text-[#4A2511]' }, '📅 Schedule View'),
-              React.createElement('p', { className: 'text-gray-600 text-lg' }, 'Appointment scheduling feature (coming soon)')
-            )
-          )
-        );
-      }
+                ),
 
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(React.createElement(App));
+                // Main Content
+                React.createElement('main', { className: 'flex-1 overflow-y-auto p-8 flex items-center justify-center' },
+                    activeTab === 'checkout' && React.createElement('div', {
+                        className: 'w-full max-w-2xl bg-white rounded-3xl p-8 shadow-lg border border-[#E8DCC8]'
+                    },
+                        React.createElement('div', {
+                            style: {
+                                width: '100%',
+                                height: '4px',
+                                backgroundColor: themeColors[stylist],
+                                borderRadius: '4px',
+                                marginBottom: '24px'
+                            }
+                        }),
+
+                        React.createElement('h2', { className: 'text-2xl font-black mb-6' }, '現場結帳'),
+
+                        // Stylist Selection
+                        React.createElement('div', { className: 'mb-6' },
+                            React.createElement('label', { className: 'block text-sm font-bold uppercase mb-3 text-gray-500' }, 'Stylist'),
+                            React.createElement('div', { className: 'flex gap-2 flex-wrap' },
+                                stylists.map(s =>
+                                    React.createElement('button', {
+                                        key: s,
+                                        type: 'button',
+                                        onClick: () => setStylist(s),
+                                        className: 'px-4 py-2 rounded-xl font-bold text-white transition-all',
+                                        style: {
+                                            backgroundColor: stylist === s ? themeColors[s] : '#E8DCC8',
+                                            color: stylist === s ? 'white' : '#4A2511'
+                                        }
+                                    }, s)
+                                )
+                            )
+                        ),
+
+                        // Customer Name
+                        React.createElement('div', { className: 'mb-6' },
+                            React.createElement('label', { className: 'block text-sm font-bold uppercase mb-2 text-gray-500' }, 'Customer Name'),
+                            React.createElement('input', {
+                                type: 'text',
+                                value: customerName,
+                                onChange: (e) => setCustomerName(e.target.value),
+                                className: 'w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none',
+                                style: { borderColor: customerName ? themeColors[stylist] : '#E8DCC8' },
+                                placeholder: 'Enter name...'
+                            })
+                        ),
+
+                        // Phone
+                        React.createElement('div', { className: 'mb-6' },
+                            React.createElement('label', { className: 'block text-sm font-bold uppercase mb-2 text-gray-500' }, 'Phone'),
+                            React.createElement('input', {
+                                type: 'tel',
+                                value: phone,
+                                onChange: (e) => setPhone(e.target.value),
+                                className: 'w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none',
+                                placeholder: '9XXXXXXXX'
+                            })
+                        ),
+
+                        // Services
+                        React.createElement('div', { className: 'mb-6' },
+                            React.createElement('label', { className: 'block text-sm font-bold uppercase mb-3 text-gray-500' }, 'Services'),
+                            React.createElement('div', { className: 'space-y-2' },
+                                services.map(service =>
+                                    React.createElement('button', {
+                                        key: service.name,
+                                        type: 'button',
+                                        onClick: () => toggleService(service),
+                                        className: 'w-full px-4 py-3 rounded-xl text-left font-bold transition-all',
+                                        style: {
+                                            backgroundColor: selectedServices.some(s => s.name === service.name) ? themeColors[stylist] : '#F0F0F0',
+                                            color: selectedServices.some(s => s.name === service.name) ? 'white' : '#4A2511'
+                                        }
+                                    },
+                                        React.createElement('span', {}, service.name, ' - $', service.price)
+                                    )
+                                )
+                            )
+                        ),
+
+                        // Total
+                        React.createElement('div', {
+                            className: 'mb-6 p-4 rounded-2xl border-2',
+                            style: { borderColor: themeColors[stylist], backgroundColor: '#F6EFE9' }
+                        },
+                            React.createElement('div', { className: 'flex justify-between items-center' },
+                                React.createElement('span', { className: 'text-lg font-bold' }, 'Total:'),
+                                React.createElement('span', {
+                                    className: 'text-3xl font-black',
+                                    style: { color: themeColors[stylist] }
+                                }, '$', total)
+                            )
+                        ),
+
+                        // Submit Button
+                        React.createElement('button', {
+                            onClick: handleSubmit,
+                            className: 'w-full py-4 rounded-2xl text-white font-black text-lg transition-all hover:opacity-90',
+                            style: { backgroundColor: themeColors[stylist] }
+                        }, '✅ Complete Checkout')
+                    ),
+
+                    activeTab === 'schedule' && React.createElement('div', {
+                        className: 'w-full max-w-4xl bg-white rounded-3xl p-8 shadow-lg border border-[#E8DCC8] text-center'
+                    },
+                        React.createElement('h2', { className: 'text-2xl font-black mb-4' }, '📅 Schedule Management'),
+                        React.createElement('p', { className: 'text-gray-600 text-lg' }, 'Appointment scheduling feature coming soon...')
+                    )
+                )
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
     </script>
-  </body>
+</body>
 </html>
